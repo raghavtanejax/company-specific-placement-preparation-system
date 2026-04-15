@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
       default: {},
     },
     skillWeaknesses: [{ type: String }],
+    xp: { type: Number, default: 0 },
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    lastActiveDate: { type: Date }
   },
   createdAt: {
     type: Date,

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
-import { Target, Activity, CheckCircle, TrendingUp } from 'lucide-react';
+import { Target, Activity, CheckCircle, TrendingUp, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import './Dashboard.css';
 
 const StatCard = ({ title, value, icon, index }) => (
@@ -45,6 +46,12 @@ const Dashboard = () => {
     ? Math.round((performance.correctAnswers / performance.totalQuestionsAttempted) * 100) 
     : 0;
 
+  const radarData = performance.skillStrengths ? Object.entries(performance.skillStrengths).map(([skill, score]) => ({
+    subject: skill,
+    A: score,
+    fullMark: 100,
+  })) : [];
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -53,10 +60,10 @@ const Dashboard = () => {
       </header>
 
       <div className="stats-grid">
-        <StatCard index={0} title="Total Quizzes" value={performance.totalQuizzesTaken} icon={<Activity size={24} color="var(--neon-purple)" />} />
-        <StatCard index={1} title="Total Score" value={performance.totalScore} icon={<Target size={24} color="var(--neon-blue)" />} />
-        <StatCard index={2} title="Correct Answers" value={performance.correctAnswers} icon={<CheckCircle size={24} color="var(--neon-pink)" />} />
-        <StatCard index={3} title="Accuracy" value={`${accuracy}%`} icon={<TrendingUp size={24} color="#10B981" />} />
+        <StatCard index={0} title="Experience Points" value={`${performance.xp || 0} XP`} icon={<Trophy size={24} color="var(--neon-purple)" />} />
+        <StatCard index={1} title="Current Streak" value={`${performance.currentStreak || 0} 🔥`} icon={<Activity size={24} color="var(--neon-pink)" />} />
+        <StatCard index={2} title="Correct Answers" value={performance.correctAnswers} icon={<CheckCircle size={24} color="#10B981" />} />
+        <StatCard index={3} title="Accuracy" value={`${accuracy}%`} icon={<TrendingUp size={24} color="var(--neon-blue)" />} />
       </div>
 
       <div className="dashboard-widgets">
@@ -73,22 +80,35 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="widget glass-panel">
-          <h2>Your Skill Strengths</h2>
-          {performance.skillStrengths && Object.keys(performance.skillStrengths).length > 0 ? (
-           <ul className="skill-list">
-              {Object.entries(performance.skillStrengths).map(([skill, score]) => (
-                <li key={skill} className="skill-item">
-                  <span>{skill}</span>
-                  <div className="progress-bar-container">
-                    <div className="progress-bar" style={{ width: `${score}%`, backgroundColor: 'var(--neon-purple)' }}></div>
-                  </div>
-                  <span className="skill-score">{score}%</span>
-                </li>
-              ))}
-           </ul>
+        <div className="widget glass-panel min-h-[400px]">
+          <h2>Your Skill Profile</h2>
+          {radarData.length >= 3 ? (
+            <div className="h-64 w-full mt-4" style={{ height: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                  <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)' }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid var(--neon-purple)', borderRadius: '8px' }} />
+                  <Radar name="Proficiency" dataKey="A" stroke="var(--neon-purple)" fill="var(--neon-purple)" fillOpacity={0.5} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <p className="empty-message">Analyze a job description or take quizzes to build your skill profile.</p>
+            <div className="empty-state">
+              <p className="empty-message mb-4">You need at least 3 skills to unlock the AI Radar Chart.</p>
+              <ul className="skill-list">
+                {Object.entries(performance.skillStrengths || {}).map(([skill, score]) => (
+                  <li key={skill} className="skill-item">
+                    <span>{skill}</span>
+                    <div className="progress-bar-container">
+                      <div className="progress-bar" style={{ width: `${score}%`, backgroundColor: 'var(--neon-purple)' }}></div>
+                    </div>
+                    <span className="skill-score">{score}%</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>

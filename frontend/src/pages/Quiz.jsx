@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, XCircle, Clock, Trophy, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Trophy, ArrowRight, Play } from 'lucide-react';
+import Editor from '@monaco-editor/react';
 import './Quiz.css';
 
 const Quiz = () => {
@@ -17,6 +18,8 @@ const Quiz = () => {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(true);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [executionResult, setExecutionResult] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
   
   // Timer state
   const [timeLeft, setTimeLeft] = useState(60); // 60 seconds per question
@@ -66,8 +69,36 @@ const Quiz = () => {
     if (selectedOption === null) return;
     setIsAnswerTested(true);
     const currentQ = questions[currentIndex];
-    const isCorrect = currentQ.options[selectedOption].isCorrect;
-    if (isCorrect) setScore(s => s + 1);
+    if (currentQ.type === 'mcq') {
+      const isCorrect = currentQ.options[selectedOption].isCorrect;
+      if (isCorrect) setScore(s => s + 1);
+    } else {
+      setScore(s => s + 1);
+    }
+  };
+
+  const runCode = async () => {
+    if (!selectedOption) return;
+    setIsExecuting(true);
+    setExecutionResult('Executing in cloud environment...');
+    try {
+      const response = await fetch('https://emacsx.com/api/v2/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language: 'javascript',
+          version: '18.15.0',
+          files: [{ content: selectedOption }],
+          stdin: questions[currentIndex]?.testCases?.[0]?.input || ''
+        })
+      });
+      const data = await response.json();
+      setExecutionResult(data.run?.stderr ? data.run?.stderr : data.run?.output || 'No output generated');
+    } catch (err) {
+      setExecutionResult('Error: ' + err.message);
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   const handleNextQuestion = async (auto = false) => {
@@ -174,23 +205,48 @@ const Quiz = () => {
               })}
             </div>
           ) : (
-            <div className="coding-area">
-              <textarea 
-                className="form-input code-editor" 
-                placeholder="Write your code here..."
-                onChange={(e) => handleSelectOption(e.target.value)}
-                disabled={isAnswerTested}
-                rows={10}
-                style={{ fontFamily: 'monospace', width: '100%', padding: '15px' }}
-              ></textarea>
-              {isAnswerTested && (
-                <div className="mt-4 p-4 rounded bg-gray-800 border border-gray-600">
-                  <p className="text-sm text-gray-400 mb-2">Expected Output / Test Cases:</p>
-                  <pre className="text-sm">
-                    {question.testCases && question.testCases.map((tc, i) => (
-                      <div key={i}>Input: {tc.input} | Output: {tc.expectedOutput}</div>
-                    ))}
-                  </pre>
+            <div className="coding-area flex flex-col gap-4">
+              <div className="editor-wrapper rounded-xl overflow-hidden border border-[rgba(255,255,255,0.1)]">
+                <Editor
+                  height="300px"
+                  defaultLanguage="javascript"
+                  theme="vs-dark"
+                  value={selectedOption || `// Write your optimized JavaScript solution here\nfunction solve() {\n  \n}\n`}
+                  onChange={(value) => handleSelectOption(value)}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    readOnly: isAnswerTested
+                  }}
+                />
+              </div>
+              
+              <div className="flex gap-4">
+                <button 
+                  onClick={runCode} 
+                  disabled={isExecuting || !selectedOption}
+                  className="btn btn-secondary flex-1 border border-emerald-500/30 hover:border-emerald-500/60 transition-colors"
+                >
+                  <Play size={18} className={isExecuting ? 'animate-pulse text-emerald-400' : 'text-emerald-400'} />
+                  {isExecuting ? 'Running...' : 'Run Code against Testcases'}
+                </button>
+              </div>
+
+              {(executionResult || isAnswerTested) && (
+                <div className="mt-2 p-4 rounded-xl bg-black/40 border border-gray-700/50">
+                  <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Console Output:</p>
+                  <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap">{executionResult || 'No output yet'}</pre>
+                  
+                  {isAnswerTested && (
+                    <div className="mt-4 pt-4 border-t border-gray-700/50">
+                      <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Expected Test Cases:</p>
+                      {question.testCases && question.testCases.map((tc, i) => (
+                        <div key={i} className="text-sm font-mono text-gray-300 mb-1">
+                          <span className="text-blue-400">In:</span> {tc.input} | <span className="text-emerald-400">Out:</span> {tc.expectedOutput}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -199,11 +255,11 @@ const Quiz = () => {
           <div className="quiz-actions mt-6">
             {!isAnswerTested ? (
               <button 
-                className="btn btn-primary w-full" 
+                className="btn btn-primary w-full shadow-lg shadow-purple-500/20" 
                 onClick={checkAnswer} 
                 disabled={selectedOption === null}
               >
-                Submit Answer
+                Submit Final Answer
               </button>
             ) : (
               <button 
