@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
     longestStreak: { type: Number, default: 0 },
     lastActiveDate: { type: Date }
   },
+  bookmarks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Question',
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { Target, Activity, CheckCircle, TrendingUp, Trophy } from 'lucide-react';
+import { Target, Activity, CheckCircle, TrendingUp, Trophy, Clock, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import './Dashboard.css';
@@ -23,6 +24,7 @@ const StatCard = ({ title, value, icon, index }) => (
 const Dashboard = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -41,7 +43,7 @@ const Dashboard = () => {
   if (loading) return <div className="loading">Loading dashboard...</div>;
   if (!profile) return <div className="loading">Error loading dashboard</div>;
 
-  const { performance } = profile;
+  const { performance, recentQuizzes } = profile;
   const accuracy = performance.totalQuestionsAttempted > 0 
     ? Math.round((performance.correctAnswers / performance.totalQuestionsAttempted) * 100) 
     : 0;
@@ -67,6 +69,44 @@ const Dashboard = () => {
       </div>
 
       <div className="dashboard-widgets">
+        {/* Recent Quizzes */}
+        <div className="widget glass-panel">
+          <h2>Recent Quizzes</h2>
+          {recentQuizzes && recentQuizzes.length > 0 ? (
+            <div className="recent-quizzes-list">
+              {recentQuizzes.map((quiz, idx) => (
+                <motion.div
+                  key={quiz._id}
+                  className="recent-quiz-item"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <div className="rq-score-dot" style={{
+                    background: quiz.accuracy >= 70 ? '#34d399' : quiz.accuracy >= 40 ? '#fcd34d' : '#f87171'
+                  }}>
+                    {quiz.accuracy}%
+                  </div>
+                  <div className="rq-info">
+                    <span className="rq-title">
+                      {quiz.company ? quiz.company : 'General'} — {quiz.score}/{quiz.totalQuestions}
+                    </span>
+                    <span className="rq-date">
+                      {new Date(quiz.completedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+              <button className="btn btn-secondary view-all-btn" onClick={() => navigate('/history')}>
+                View All History <ArrowRight size={14} />
+              </button>
+            </div>
+          ) : (
+            <p className="empty-message">No quizzes taken yet. Start practicing to see your history here!</p>
+          )}
+        </div>
+
+        {/* Weak Areas */}
         <div className="widget glass-panel">
           <h2>Weak Areas to Target</h2>
           {performance.skillWeaknesses && performance.skillWeaknesses.length > 0 ? (
@@ -80,7 +120,8 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="widget glass-panel min-h-[400px]">
+        {/* Skill Radar Chart */}
+        <div className="widget glass-panel skill-radar-widget">
           <h2>Your Skill Profile</h2>
           {radarData.length >= 3 ? (
             <div className="h-64 w-full mt-4" style={{ height: '300px' }}>
@@ -111,6 +152,19 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        <button className="btn btn-primary" onClick={() => navigate('/companies')}>
+          🏢 Browse Companies
+        </button>
+        <button className="btn btn-secondary" onClick={() => navigate('/analyze')}>
+          📄 Analyze a JD
+        </button>
+        <button className="btn btn-secondary" onClick={() => navigate('/quiz')}>
+          🎯 Quick Practice
+        </button>
       </div>
     </div>
   );

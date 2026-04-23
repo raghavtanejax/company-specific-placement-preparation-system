@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, XCircle, Clock, Trophy, ArrowRight, Play } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Trophy, ArrowRight, Play, Bookmark, BookmarkCheck } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import './Quiz.css';
 
 const Quiz = () => {
   const [searchParams] = useSearchParams();
   const skills = searchParams.get('skills') || '';
+  const company = searchParams.get('company') || '';
   const navigate = useNavigate();
 
   const [questions, setQuestions] = useState([]);
@@ -20,29 +21,50 @@ const Quiz = () => {
   const [quizFinished, setQuizFinished] = useState(false);
   const [executionResult, setExecutionResult] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
   
   // Timer state
   const [timeLeft, setTimeLeft] = useState(60); // 60 seconds per question
+  
+  // Tracking for quiz history
+  const [questionResults, setQuestionResults] = useState([]); // per-question results
+  const questionStartTime = useRef(Date.now());
+  const quizStartTime = useRef(Date.now());
 
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await api.get(`/questions/recommend?skills=${skills}`);
-        if(data.length === 0) {
-          // If no specific skills found, fetch generic
+        // Build query params
+        const params = new URLSearchParams();
+        if (skills) params.set('skills', skills);
+        if (company) params.set('company', company);
+
+        const { data } = await api.get(`/questions/recommend?${params.toString()}`);
+        if (data.length === 0) {
+          // If no specific results, fetch generic
           const genericData = await api.get('/questions/recommend');
           setQuestions(genericData.data);
         } else {
           setQuestions(data);
         }
+
+        // Fetch user bookmarks
+        try {
+          const bmRes = await api.get('/user/bookmarks');
+          setBookmarkedIds(new Set(bmRes.data.map((b) => b._id)));
+        } catch (e) {
+          // ignore bookmark fetch errors
+        }
       } catch (err) {
         console.error('Failed to load questions', err);
       } finally {
         setLoading(false);
+        quizStartTime.current = Date.now();
+        questionStartTime.current = Date.now();
       }
     };
-    fetchQuestions();
-  }, [skills]);
+    fetchData();
+  }, [skills, company]);
 
   useEffect(() => {
     if (loading || quizFinished || isAnswerTested) return;
@@ -51,7 +73,7 @@ const Quiz = () => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleNextQuestion(false); // auto fail
+          handleNextQuestion(true); // auto fail on timeout
           return 60;
         }
         return prev - 1;
@@ -65,16 +87,49 @@ const Quiz = () => {
     setSelectedOption(optionId);
   };
 
+  const toggleBookmark = async (questionId) => {
+    try {
+      const { data } = await api.post(`/user/bookmarks/${questionId}`);
+      setBookmarkedIds((prev) => {
+        const next = new Set(prev);
+        if (data.isBookmarked) {
+          next.add(questionId);
+        } else {
+          next.delete(questionId);
+        }
+        return next;
+      });
+    } catch (e) {
+      console.error('Failed to toggle bookmark', e);
+    }
+  };
+
   const checkAnswer = () => {
     if (selectedOption === null) return;
     setIsAnswerTested(true);
     const currentQ = questions[currentIndex];
+    const timeTaken = Math.round((Date.now() - questionStartTime.current) / 1000);
+    
+    let isCorrect = false;
     if (currentQ.type === 'mcq') {
-      const isCorrect = currentQ.options[selectedOption].isCorrect;
+      isCorrect = currentQ.options[selectedOption].isCorrect;
       if (isCorrect) setScore(s => s + 1);
     } else {
+      // For coding, consider it correct if they submitted (simplified)
+      isCorrect = true;
       setScore(s => s + 1);
     }
+
+    // Track this question's result
+    setQuestionResults((prev) => [
+      ...prev,
+      {
+        questionId: currentQ._id,
+        selectedAnswer: selectedOption,
+        isCorrect,
+        timeTaken,
+      },
+    ]);
   };
 
   const runCode = async () => {
@@ -101,23 +156,74 @@ const Quiz = () => {
     }
   };
 
-  const handleNextQuestion = async (auto = false) => {
+  const handleNextQuestion = async (isTimeout = false) => {
+    // If timeout, record a failed result for this question
+    if (isTimeout && !isAnswerTested) {
+      const currentQ = questions[currentIndex];
+      const timeTaken = 60;
+      setQuestionResults((prev) => [
+        ...prev,
+        {
+          questionId: currentQ._id,
+          selectedAnswer: null,
+          isCorrect: false,
+          timeTaken,
+        },
+      ]);
+    }
+
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(c => c + 1);
       setSelectedOption(null);
       setIsAnswerTested(false);
+      setExecutionResult('');
       setTimeLeft(60);
+      questionStartTime.current = Date.now();
     } else {
-      // Quiz finished, save performance
+      // Quiz finished — save to history
       setQuizFinished(true);
+      const finalScore = score + (!isTimeout && selectedOption !== null && !isAnswerTested ? 0 : 0);
+      const totalDuration = Math.round((Date.now() - quizStartTime.current) / 1000);
+      const accuracy = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+
+      // Compute skill-level accuracy for updating user profile
+      const skillAccuracy = {};
+      questionResults.forEach((qr) => {
+        const q = questions.find((qq) => qq._id === qr.questionId);
+        if (q && q.skills) {
+          q.skills.forEach((skill) => {
+            if (!skillAccuracy[skill]) skillAccuracy[skill] = { correct: 0, total: 0 };
+            skillAccuracy[skill].total += 1;
+            if (qr.isCorrect) skillAccuracy[skill].correct += 1;
+          });
+        }
+      });
+
+      const updateSkills = {};
+      Object.entries(skillAccuracy).forEach(([skill, data]) => {
+        updateSkills[skill] = Math.round((data.correct / data.total) * 100);
+      });
+
       try {
+        // Save quiz attempt to history
+        await api.post('/quiz/save', {
+          company: company || null,
+          skills: [...new Set(questions.flatMap((q) => q.skills || []))],
+          questions: questionResults,
+          score,
+          totalQuestions: questions.length,
+          accuracy,
+          duration: totalDuration,
+        });
+
+        // Update user performance
         await api.put('/user/performance', {
           questionsAttempted: questions.length,
-          correctAnswers: score + (auto ? 0 : (selectedOption !== null && questions[currentIndex].options[selectedOption].isCorrect ? 1 : 0)),
-          updateSkills: {} // Simplified for now
+          correctAnswers: score,
+          updateSkills,
         });
       } catch (e) {
-        console.error("Failed to save performance");
+        console.error('Failed to save performance', e);
       }
     }
   };
@@ -126,6 +232,7 @@ const Quiz = () => {
   if (questions.length === 0) return <div className="loading">No questions found. Try adding more questions to DB.</div>;
 
   if (quizFinished) {
+    const accuracy = Math.round((score / questions.length) * 100);
     return (
       <div className="quiz-container">
         <motion.div 
@@ -135,10 +242,23 @@ const Quiz = () => {
         >
           <Trophy size={64} color="var(--neon-purple)" className="mx-auto mb-4" />
           <h2 className="text-gradient mb-2">Quiz Completed!</h2>
-          <p className="result-score mb-6">You scored {score} out of {questions.length}</p>
-          <button onClick={() => navigate('/dashboard')} className="btn btn-primary">
-            Back to Dashboard
-          </button>
+          <p className="result-score mb-2">You scored {score} out of {questions.length}</p>
+          <p className="result-accuracy" style={{ fontSize: '2rem', fontWeight: 700, color: accuracy >= 70 ? '#34d399' : accuracy >= 40 ? '#fcd34d' : '#f87171' }}>
+            {accuracy}%
+          </p>
+          {company && (
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Company: <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{company}</span>
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/dashboard')} className="btn btn-secondary">
+              Dashboard
+            </button>
+            <button onClick={() => navigate('/history')} className="btn btn-primary">
+              View History
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -149,9 +269,25 @@ const Quiz = () => {
   return (
     <div className="quiz-container">
       <div className="quiz-header">
-        <span className="question-counter">Question {currentIndex + 1} of {questions.length}</span>
-        <div className={`timer ${timeLeft <= 10 ? 'timer-danger' : ''}`}>
-          <Clock size={16} /> 00:{timeLeft.toString().padStart(2, '0')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="question-counter">Question {currentIndex + 1} of {questions.length}</span>
+          {company && <span className="company-tag" style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>{company}</span>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={() => toggleBookmark(question._id)}
+            className="bookmark-toggle"
+            title={bookmarkedIds.has(question._id) ? 'Remove bookmark' : 'Bookmark this question'}
+          >
+            {bookmarkedIds.has(question._id) ? (
+              <BookmarkCheck size={20} color="var(--neon-purple)" />
+            ) : (
+              <Bookmark size={20} />
+            )}
+          </button>
+          <div className={`timer ${timeLeft <= 10 ? 'timer-danger' : ''}`}>
+            <Clock size={16} /> 00:{timeLeft.toString().padStart(2, '0')}
+          </div>
         </div>
       </div>
 

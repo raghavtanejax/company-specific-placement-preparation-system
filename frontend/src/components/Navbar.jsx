@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, FileText, Code } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './Navbar.css';
 
@@ -19,8 +19,12 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
+    { name: 'Companies', path: '/companies', icon: <Building2 size={18} /> },
     { name: 'JD Analyzer', path: '/analyze', icon: <FileText size={18} /> },
     { name: 'Practice', path: '/quiz', icon: <Code size={18} /> },
+    { name: 'History', path: '/history', icon: <History size={18} /> },
+    { name: 'Bookmarks', path: '/bookmarks', icon: <Bookmark size={18} /> },
+    { name: 'Experiences', path: '/experiences', icon: <MessageSquare size={18} /> },
   ];
 
   return (
@@ -35,11 +39,11 @@ const Navbar = () => {
             <Link 
               key={link.path} 
               to={link.path} 
-              className={`nav-link ${location.pathname === link.path ? 'active' : ''}`}
+              className={`nav-link ${location.pathname === link.path || (link.path !== '/dashboard' && location.pathname.startsWith(link.path)) ? 'active' : ''}`}
             >
               {link.icon}
-              {link.name}
-              {location.pathname === link.path && (
+              <span className="nav-link-text">{link.name}</span>
+              {(location.pathname === link.path || (link.path !== '/dashboard' && location.pathname.startsWith(link.path))) && (
                 <motion.div layoutId="navbar-indicator" className="nav-indicator" />
               )}
             </Link>

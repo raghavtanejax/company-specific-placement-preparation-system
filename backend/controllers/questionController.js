@@ -3,7 +3,7 @@ import Question from '../models/Question.js';
 // Get recommended questions based on extracted skills
 export const getRecommendedQuestions = async (req, res) => {
   try {
-    const { skills, difficulty } = req.query; // skills is a comma-separated string
+    const { skills, difficulty, company } = req.query; // skills is a comma-separated string
     
     let query = {};
     if (skills) {
@@ -13,6 +13,10 @@ export const getRecommendedQuestions = async (req, res) => {
     
     if (difficulty) {
       query.difficulty = difficulty;
+    }
+
+    if (company) {
+      query.company = company;
     }
 
     const questions = await Question.find(query).limit(20);

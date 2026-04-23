@@ -17,6 +17,9 @@ const questionSchema = new mongoose.Schema({
   skills: [{
     type: String, // e.g., 'React', 'DSA', 'Node.js'
   }],
+  company: [{
+    type: String, // e.g., 'google', 'amazon' — company slugs
+  }],
   type: {
     type: String,
     enum: ['mcq', 'coding'],
