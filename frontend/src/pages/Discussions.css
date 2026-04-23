@@ -1,0 +1,60 @@
+.discussions-container { max-width: 900px; margin: 0 auto; }
+.discussions-header { text-align: center; margin-bottom: 2rem; }
+.discussions-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+.discussions-header p { color: var(--text-muted); }
+
+.discussions-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+.sort-btns { display: flex; gap: 0.5rem; }
+.sort-btn { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted); cursor: pointer; transition: all 0.3s ease; font-family: inherit; }
+.sort-btn:hover { border-color: rgba(139,92,246,0.3); color: var(--text-main); }
+.sort-btn.active { background: rgba(139,92,246,0.15); border-color: var(--neon-purple); color: var(--neon-purple); }
+
+.discussion-list { display: flex; flex-direction: column; gap: 1rem; }
+.discussion-card { padding: 1.25rem 1.5rem; border-radius: 14px; cursor: pointer; transition: all 0.3s ease; }
+.discussion-card:hover { border-color: rgba(139,92,246,0.3); transform: translateY(-2px); }
+
+.dc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+.dc-title { font-weight: 600; font-size: 1rem; }
+.dc-question-tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; background: rgba(59,130,246,0.15); color: var(--neon-blue); white-space: nowrap; }
+
+.dc-body { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.dc-meta { display: flex; align-items: center; gap: 1rem; font-size: 0.78rem; color: var(--text-muted); }
+.dc-meta .dc-author { font-weight: 500; color: var(--text-main); }
+.dc-meta .dc-upvotes { color: var(--neon-purple); font-weight: 500; }
+
+/* New Discussion Form */
+.new-discussion-form { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; }
+.new-discussion-form h3 { margin-bottom: 1rem; font-size: 1.1rem; }
+.form-row { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
+
+/* Discussion Detail / Expanded View */
+.discussion-detail { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; }
+.dd-header { margin-bottom: 1rem; }
+.dd-header h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+.dd-meta { display: flex; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap; }
+.dd-body { font-size: 0.95rem; line-height: 1.7; margin-bottom: 1.5rem; white-space: pre-wrap; color: var(--text-muted); }
+
+.dd-actions { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+.upvote-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted); cursor: pointer; font-family: inherit; font-size: 0.85rem; transition: all 0.3s ease; }
+.upvote-btn:hover { border-color: var(--neon-purple); color: var(--neon-purple); }
+.upvote-btn.upvoted { background: rgba(139,92,246,0.15); border-color: var(--neon-purple); color: var(--neon-purple); }
+
+/* Replies */
+.replies-section h3 { font-size: 1rem; margin-bottom: 1rem; }
+.reply-card { padding: 1rem; margin-bottom: 0.75rem; border-radius: 10px; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.04); }
+.reply-card .reply-author { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+.reply-card .reply-body { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; white-space: pre-wrap; margin-bottom: 0.5rem; }
+.reply-card .reply-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); }
+
+.reply-input-area { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.reply-input-area textarea { flex: 1; min-height: 44px; max-height: 120px; resize: none; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--text-main); font-family: inherit; font-size: 0.88rem; }
+.reply-input-area textarea:focus { outline: none; border-color: var(--neon-purple); }
+
+.empty-discussions { text-align: center; padding: 3rem 2rem; }
+.empty-discussions .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+  .discussions-toolbar { flex-direction: column; align-items: stretch; }
+}

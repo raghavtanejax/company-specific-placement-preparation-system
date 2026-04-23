@@ -13,6 +13,9 @@ import Bookmarks from './pages/Bookmarks';
 import Experiences from './pages/Experiences';
 import ExperienceDetail from './pages/ExperienceDetail';
 import NewExperience from './pages/NewExperience';
+import Leaderboard from './pages/Leaderboard';
+import MockInterview from './pages/MockInterview';
+import Discussions from './pages/Discussions';
 
 // Simple Auth Guard
 const PrivateRoute = ({ children }) => {
@@ -106,6 +109,30 @@ function App() {
               element={
                 <PrivateRoute>
                   <ExperienceDetail />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/leaderboard" 
+              element={
+                <PrivateRoute>
+                  <Leaderboard />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/mock-interview" 
+              element={
+                <PrivateRoute>
+                  <MockInterview />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/discussions" 
+              element={
+                <PrivateRoute>
+                  <Discussions />
                 </PrivateRoute>
               } 
             />

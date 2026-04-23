@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare, Trophy, Mic, MessagesSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './Navbar.css';
 
@@ -22,6 +22,9 @@ const Navbar = () => {
     { name: 'Companies', path: '/companies', icon: <Building2 size={18} /> },
     { name: 'JD Analyzer', path: '/analyze', icon: <FileText size={18} /> },
     { name: 'Practice', path: '/quiz', icon: <Code size={18} /> },
+    { name: 'Mock Interview', path: '/mock-interview', icon: <Mic size={18} /> },
+    { name: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={18} /> },
+    { name: 'Discussions', path: '/discussions', icon: <MessagesSquare size={18} /> },
     { name: 'History', path: '/history', icon: <History size={18} /> },
     { name: 'Bookmarks', path: '/bookmarks', icon: <Bookmark size={18} /> },
     { name: 'Experiences', path: '/experiences', icon: <MessageSquare size={18} /> },

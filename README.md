@@ -252,10 +252,10 @@ Users          Companies        Questions         QuizAttempts       InterviewEx
 ├─ email       ├─ slug          ├─ description     ├─ company         ├─ company
 ├─ password    ├─ description   ├─ difficulty      ├─ skills[]        ├─ role
 ├─ performance ├─ difficulty    ├─ skills[]        ├─ questions[]     ├─ difficulty
-│  ├─ xp       ├─ hiringPattern├─ company[]       │  ├─ questionId   ├─ result
-│  ├─ streak   │  ├─ rounds[]  ├─ type (mcq/code) │  ├─ isCorrect    ├─ rounds[]
-│  ├─ skills   │  ├─ focusAreas├─ options[]       │  └─ timeTaken    │  ├─ name
-│  └─ weakness │  └─ avgCTC    └─ testCases[]     ├─ score           │  ├─ description
+│  ├─ xp       ├─ hiringPattern ├─ company[]       │  ├─ questionId   ├─ result
+│  ├─ streak   │  ├─ rounds[]   ├─ type (mcq/code) │  ├─ isCorrect    ├─ rounds[]
+│  ├─ skills   │  ├─ focusAreas ├─ options[]       │  └─ timeTaken    │  ├─ name
+│  └─ weakness │  └─ avgCTC     └─ testCases[]     ├─ score           │  ├─ description
 ├─ bookmarks[] ├─ logo                             ├─ accuracy        │  ├─ questionsAsked
 └─ createdAt   └─ color                            └─ completedAt     │  └─ tips
                                                                       ├─ overallTips
