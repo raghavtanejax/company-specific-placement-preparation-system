@@ -44,11 +44,21 @@ const Dashboard = () => {
   if (!profile) return <div className="loading">Error loading dashboard</div>;
 
   const { performance, recentQuizzes } = profile;
-  const accuracy = performance.totalQuestionsAttempted > 0 
-    ? Math.round((performance.correctAnswers / performance.totalQuestionsAttempted) * 100) 
+  
+  const safePerformance = performance || {
+    totalQuestionsAttempted: 0,
+    correctAnswers: 0,
+    xp: 0,
+    currentStreak: 0,
+    skillStrengths: {},
+    skillWeaknesses: []
+  };
+
+  const accuracy = safePerformance.totalQuestionsAttempted > 0 
+    ? Math.round((safePerformance.correctAnswers / safePerformance.totalQuestionsAttempted) * 100) 
     : 0;
 
-  const radarData = performance.skillStrengths ? Object.entries(performance.skillStrengths).map(([skill, score]) => ({
+  const radarData = safePerformance.skillStrengths ? Object.entries(safePerformance.skillStrengths).map(([skill, score]) => ({
     subject: skill,
     A: score,
     fullMark: 100,
@@ -62,9 +72,9 @@ const Dashboard = () => {
       </header>
 
       <div className="stats-grid">
-        <StatCard index={0} title="Experience Points" value={`${performance.xp || 0} XP`} icon={<Trophy size={24} color="var(--neon-purple)" />} />
-        <StatCard index={1} title="Current Streak" value={`${performance.currentStreak || 0} 🔥`} icon={<Activity size={24} color="var(--neon-pink)" />} />
-        <StatCard index={2} title="Correct Answers" value={performance.correctAnswers} icon={<CheckCircle size={24} color="#10B981" />} />
+        <StatCard index={0} title="Experience Points" value={`${safePerformance.xp || 0} XP`} icon={<Trophy size={24} color="var(--neon-purple)" />} />
+        <StatCard index={1} title="Current Streak" value={`${safePerformance.currentStreak || 0} 🔥`} icon={<Activity size={24} color="var(--neon-pink)" />} />
+        <StatCard index={2} title="Correct Answers" value={safePerformance.correctAnswers || 0} icon={<CheckCircle size={24} color="#10B981" />} />
         <StatCard index={3} title="Accuracy" value={`${accuracy}%`} icon={<TrendingUp size={24} color="var(--neon-blue)" />} />
       </div>
 
@@ -109,9 +119,9 @@ const Dashboard = () => {
         {/* Weak Areas */}
         <div className="widget glass-panel">
           <h2>Weak Areas to Target</h2>
-          {performance.skillWeaknesses && performance.skillWeaknesses.length > 0 ? (
+          {safePerformance.skillWeaknesses && safePerformance.skillWeaknesses.length > 0 ? (
             <div className="tags-container">
-              {performance.skillWeaknesses.map(skill => (
+              {safePerformance.skillWeaknesses.map(skill => (
                 <span key={skill} className="tag tag-warning">{skill}</span>
               ))}
             </div>
@@ -139,7 +149,7 @@ const Dashboard = () => {
             <div className="empty-state">
               <p className="empty-message mb-4">You need at least 3 skills to unlock the AI Radar Chart.</p>
               <ul className="skill-list">
-                {Object.entries(performance.skillStrengths || {}).map(([skill, score]) => (
+                {Object.entries(safePerformance.skillStrengths || {}).map(([skill, score]) => (
                   <li key={skill} className="skill-item">
                     <span>{skill}</span>
                     <div className="progress-bar-container">

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5001/api', // Updated to 5001 to avoid AirPlay conflict
+  baseURL: import.meta.env.MODE === 'production' ? '/_/backend/api' : 'http://localhost:5001/api', // Maps to Vercel's routePrefix in production
 });
 
 api.interceptors.request.use(
@@ -13,6 +13,19 @@ api.interceptors.request.use(
     return config;
   },
   error => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token is invalid or expired
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;
