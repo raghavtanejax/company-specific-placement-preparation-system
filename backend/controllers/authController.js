@@ -10,8 +10,10 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if user exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: new RegExp(`^${normalizedEmail}$`, 'i') });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -22,8 +24,8 @@ export const register = async (req, res) => {
 
     // Create user
     const newUser = new User({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword
     });
 
@@ -47,8 +49,10 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if user exists
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: new RegExp(`^${normalizedEmail}$`, 'i') });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }

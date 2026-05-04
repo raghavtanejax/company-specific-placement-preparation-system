@@ -19,6 +19,7 @@ const MockInterview = () => {
   const [role, setRole] = useState('');
   const [interviewType, setInterviewType] = useState('');
   const [difficulty, setDifficulty] = useState('medium');
+  const [aiModel, setAiModel] = useState('gemini-2.5-flash');
   const [interviewId, setInterviewId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -52,7 +53,7 @@ const MockInterview = () => {
     if (!company || !role || !interviewType) return;
     setSending(true);
     try {
-      const { data } = await api.post('/mock-interview/start', { company, role, interviewType, difficulty });
+      const { data } = await api.post('/mock-interview/start', { company, role, interviewType, difficulty, aiModel });
       setInterviewId(data.interviewId);
       setMessages([{ role: 'ai', content: data.message }]);
       setQuestionsAsked(1);
@@ -188,13 +189,25 @@ const MockInterview = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Difficulty</label>
-            <select className="form-input" value={difficulty} onChange={e => setDifficulty(e.target.value)}>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
+          <div className="setup-row">
+            <div className="form-group">
+              <label className="form-label">Difficulty</label>
+              <select className="form-input" value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">AI Model</label>
+              <select className="form-input" value={aiModel} onChange={e => setAiModel(e.target.value)}>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Default)</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Best Quality)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+              </select>
+            </div>
           </div>
 
           <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleStart} disabled={!company || !role || !interviewType || sending}>

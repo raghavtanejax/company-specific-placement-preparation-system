@@ -216,9 +216,9 @@ const generateQuestionsForSkill = (skill, companySlug = null) => {
         ];
       } else {
         q.options = [
-          { text: `Correct assertion regarding ${skill}`, isCorrect: true },
-          { text: `Incorrect claim about ${skill}`, isCorrect: false },
-          { text: `Outdated feature of ${skill}`, isCorrect: false },
+          { text: `An essential feature of ${skill}`, isCorrect: true },
+          { text: `An outdated method in ${skill}`, isCorrect: false },
+          { text: `A deprecated module in ${skill}`, isCorrect: false },
           { text: `Concept from a different technology`, isCorrect: false }
         ];
       }

@@ -4,7 +4,7 @@ import MockInterview from '../models/MockInterview.js';
 // Start a new mock interview session
 export const startInterview = async (req, res) => {
   try {
-    const { company, role, interviewType, difficulty } = req.body;
+    const { company, role, interviewType, difficulty, aiModel } = req.body;
 
     if (!company || !role || !interviewType) {
       return res.status(400).json({ message: 'Company, role, and interview type are required' });
@@ -17,7 +17,8 @@ export const startInterview = async (req, res) => {
     if (apiKey) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const selectedModel = aiModel || 'gemini-2.5-flash';
+        const model = genAI.getGenerativeModel({ model: selectedModel });
 
         const prompt = `You are a ${interviewType} interviewer at ${company} for the role of ${role}. 
 Difficulty level: ${difficulty || 'medium'}.
@@ -50,6 +51,7 @@ Keep it natural and conversational. Do NOT provide any answer hints.`;
       role,
       interviewType,
       difficulty: difficulty || 'medium',
+      aiModel: aiModel || 'gemini-2.5-flash',
       messages: [{ role: 'ai', content: firstQuestion }],
       questionsAsked: 1,
     });
@@ -98,7 +100,8 @@ export const respondToInterview = async (req, res) => {
     if (apiKey) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const modelName = interview.aiModel || 'gemini-2.5-flash';
+        const model = genAI.getGenerativeModel({ model: modelName });
 
         // Build conversation history for context
         const conversationHistory = interview.messages.map(m =>
@@ -281,7 +284,8 @@ export const endInterview = async (req, res) => {
     if (apiKey && interview.messages.length > 2) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const modelName = interview.aiModel || 'gemini-2.5-flash';
+        const model = genAI.getGenerativeModel({ model: modelName });
 
         const conversationHistory = interview.messages.map(m =>
           `${m.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${m.content}`
@@ -402,6 +406,14 @@ function generateFallbackFeedback(interview) {
   const correctCount = userMessages.filter(m => m.feedback?.isCorrect === true).length;
   const incorrectCount = userMessages.filter(m => m.feedback?.isCorrect === false).length;
 
+  // Aggregate all strengths and improvements from previous question feedbacks
+  const allStrengths = userMessages.flatMap(m => m.feedback?.strengths || []);
+  const allImprovements = userMessages.flatMap(m => m.feedback?.improvements || []);
+  
+  // Deduplicate and take top 5
+  const uniqueStrengths = [...new Set(allStrengths)].slice(0, 5);
+  const uniqueImprovements = [...new Set(allImprovements)].slice(0, 5);
+
   let recommendation = 'N/A';
   if (totalScore >= 80) recommendation = 'Hire';
   else if (totalScore >= 60) recommendation = 'Lean Hire';
@@ -410,11 +422,13 @@ function generateFallbackFeedback(interview) {
 
   return {
     totalScore,
-    summary: `You answered ${answeredCount} questions. ${correctCount > 0 ? `${correctCount} were correct` : ''}${incorrectCount > 0 ? `${correctCount > 0 ? ' and ' : ''}${incorrectCount} had errors` : ''}. AI-powered detailed analysis was unavailable for this session.`,
-    strongAreas: scores.length > 0
-      ? scores.filter(s => s >= 7).length > 0 ? ['Good participation', 'Attempted all questions'] : ['Completed the interview']
-      : ['Completed the interview'],
-    improvementAreas: ['Try again with AI enabled for detailed feedback'],
+    summary: `You answered ${answeredCount} questions. ${correctCount > 0 ? `${correctCount} were correct` : ''}${incorrectCount > 0 ? `${correctCount > 0 ? ' and ' : ''}${incorrectCount} had errors` : ''}. AI-powered detailed analysis was unavailable for the final summary, so this feedback is compiled from your previous answers.`,
+    strongAreas: uniqueStrengths.length > 0 
+      ? uniqueStrengths 
+      : (scores.length > 0 && scores.filter(s => s >= 7).length > 0 ? ['Good participation', 'Attempted all questions'] : ['Completed the interview']),
+    improvementAreas: uniqueImprovements.length > 0 
+      ? uniqueImprovements 
+      : ['Please try again later. The AI service limit was reached during your interview.'],
     recommendation,
   };
 }

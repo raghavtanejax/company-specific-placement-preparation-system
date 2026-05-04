@@ -39,14 +39,39 @@ const Quiz = () => {
         if (skills) params.set('skills', skills);
         if (company) params.set('company', company);
 
+        let fetchedData = [];
         const { data } = await api.get(`/questions/recommend?${params.toString()}`);
         if (data.length === 0) {
           // If no specific results, fetch generic
           const genericData = await api.get('/questions/recommend');
-          setQuestions(genericData.data);
+          fetchedData = genericData.data;
         } else {
-          setQuestions(data);
+          fetchedData = data;
         }
+
+        // Process questions: shuffle options and remove giveaway words like "Correct assertion"
+        const processedQuestions = fetchedData.map((q) => {
+          if (q.type === 'mcq' && q.options) {
+            const sanitizedOptions = q.options.map(opt => ({
+              ...opt,
+              text: opt.text
+                .replace(/Correct assertion regarding/gi, 'An essential feature of')
+                .replace(/Incorrect claim about/gi, 'An outdated method in')
+                .replace(/Outdated feature of/gi, 'A deprecated module in')
+            }));
+            
+            // Fisher-Yates shuffle
+            for (let i = sanitizedOptions.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [sanitizedOptions[i], sanitizedOptions[j]] = [sanitizedOptions[j], sanitizedOptions[i]];
+            }
+            
+            return { ...q, options: sanitizedOptions };
+          }
+          return q;
+        });
+
+        setQuestions(processedQuestions);
 
         // Fetch user bookmarks
         try {

@@ -45,6 +45,10 @@ const mockInterviewSchema = new mongoose.Schema({
     enum: ['easy', 'medium', 'hard'],
     default: 'medium',
   },
+  aiModel: {
+    type: String,
+    default: 'gemini-2.5-flash',
+  },
   messages: [messageSchema],
   status: {
     type: String,
