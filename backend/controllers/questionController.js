@@ -1,32 +1,49 @@
 import Question from '../models/Question.js';
 
-// Get recommended questions based on extracted skills
+// Get recommended questions based on extracted skills — randomized every time
 export const getRecommendedQuestions = async (req, res) => {
   try {
-    const { skills, difficulty, company } = req.query; // skills is a comma-separated string
-    
-    let query = {};
+    const { skills, difficulty, company, limit = 10 } = req.query;
+
+    let matchStage = {};
+
     if (skills) {
       const skillsArray = skills.split(',').map(s => s.trim().toLowerCase());
-      query.skills = { $in: skillsArray };
+      matchStage.skills = { $in: skillsArray };
     }
-    
+
     if (difficulty) {
-      query.difficulty = difficulty;
+      matchStage.difficulty = difficulty;
     }
 
     if (company) {
-      query.company = company;
+      matchStage.company = company;
     }
 
-    const questions = await Question.find(query).limit(20);
+    const sampleSize = Math.min(parseInt(limit) || 10, 20);
+
+    // Use aggregation with $match + $sample for true randomization
+    let pipeline = [];
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+    pipeline.push({ $sample: { size: sampleSize } });
+
+    let questions = await Question.aggregate(pipeline);
+
+    // If filtered query returned too few questions, supplement with general random questions
+    if (questions.length < 5) {
+      const fallbackPipeline = [{ $sample: { size: sampleSize } }];
+      questions = await Question.aggregate(fallbackPipeline);
+    }
+
     res.json(questions);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Seed some basic questions
+// Seed some basic questions (utility route)
 export const seedQuestions = async (req, res) => {
   try {
     const defaultQuestions = [
@@ -37,30 +54,23 @@ export const seedQuestions = async (req, res) => {
         skills: ['react', 'javascript'],
         type: 'mcq',
         options: [
-          { text: 'It is a direct copy of the actual DOM', isCorrect: false },
-          { text: 'It is a lightweight copy of the DOM kept in memory', isCorrect: true },
-          { text: 'It is a new HTML tag', isCorrect: false },
-        ]
-      },
-      {
-        title: 'Reverse a Linked List',
-        description: 'Write a function to reverse a singly linked list.',
-        difficulty: 'hard',
-        skills: ['dsa', 'data structures'],
-        type: 'coding',
-        testCases: [
-          { input: '1->2->3->NULL', expectedOutput: '3->2->1->NULL' }
+          { text: 'A direct copy of the actual DOM that syncs in real-time', isCorrect: false },
+          { text: 'A lightweight in-memory representation of the DOM used for diffing', isCorrect: true },
+          { text: 'A new HTML5 tag introduced for single-page apps', isCorrect: false },
+          { text: 'A database that stores DOM changes on the server', isCorrect: false },
         ]
       },
       {
         title: 'What does JSON stand for?',
-        description: 'Basic web knowledge.',
+        description: 'Basic web knowledge about data interchange formats.',
         difficulty: 'easy',
         skills: ['javascript', 'web'],
         type: 'mcq',
         options: [
           { text: 'JavaScript Object Notation', isCorrect: true },
-          { text: 'Java Source Open Network', isCorrect: false }
+          { text: 'Java Source Open Network', isCorrect: false },
+          { text: 'JavaScript Operational Node', isCorrect: false },
+          { text: 'Joint Syntax Object Naming', isCorrect: false },
         ]
       }
     ];

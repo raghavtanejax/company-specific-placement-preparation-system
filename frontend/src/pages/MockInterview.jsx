@@ -242,7 +242,7 @@ const MockInterview = () => {
   // CHAT / REVIEW PHASE
   return (
     <div className="mock-interview-container">
-      <div className="chat-wrapper glass-panel">
+      <div className={`chat-wrapper glass-panel ${phase === 'review' ? 'review-phase' : ''}`}>
         <div className="chat-top-bar">
           <div className="chat-info">
             <button className="btn btn-secondary" style={{ padding: '6px 10px' }} onClick={resetInterview}><ArrowLeft size={16} /></button>
@@ -255,83 +255,85 @@ const MockInterview = () => {
           </div>
         </div>
 
-        <div className="chat-messages">
-          {messages.map((msg, idx) => (
-            <motion.div key={idx} className={`chat-bubble ${msg.role}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-              <div className="bubble-label">{msg.role === 'ai' ? '🤖 Interviewer' : '👤 You'}</div>
-              {msg.content}
-              {msg.feedback && (
-                <div className="answer-feedback" style={{ borderLeft: `3px solid ${msg.feedback.isCorrect === false ? '#f87171' : msg.feedback.isCorrect === true ? '#34d399' : 'var(--neon-purple)'}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <div className="feedback-score">Score: {msg.feedback.score}/10</div>
-                    {msg.feedback.isCorrect === true && (
-                      <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '6px', background: 'rgba(52,211,153,0.15)', color: '#34d399', fontWeight: 600 }}>✅ Correct</span>
-                    )}
-                    {msg.feedback.isCorrect === false && (
-                      <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '6px', background: 'rgba(248,113,113,0.15)', color: '#f87171', fontWeight: 600 }}>❌ Incorrect</span>
-                    )}
-                  </div>
-                  {msg.feedback.isCorrect === false && msg.feedback.correctAnswer && (
-                    <div style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem', marginBottom: '0.5rem', borderRadius: '8px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)', color: '#fca5a5' }}>
-                      <strong>Correct Answer:</strong> {msg.feedback.correctAnswer}
+        {phase === 'chat' ? (
+          <>
+            <div className="chat-messages">
+              {messages.map((msg, idx) => (
+                <motion.div key={idx} className={`chat-bubble ${msg.role}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                  <div className="bubble-label">{msg.role === 'ai' ? '🤖 Interviewer' : '👤 You'}</div>
+                  {msg.content}
+                  {msg.feedback && (
+                    <div className="answer-feedback" style={{ borderLeft: `3px solid ${msg.feedback.isCorrect === false ? '#f87171' : msg.feedback.isCorrect === true ? '#34d399' : 'var(--neon-purple)'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div className="feedback-score">Score: {msg.feedback.score}/10</div>
+                        {msg.feedback.isCorrect === true && (
+                          <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '6px', background: 'rgba(52,211,153,0.15)', color: '#34d399', fontWeight: 600 }}>✅ Correct</span>
+                        )}
+                        {msg.feedback.isCorrect === false && (
+                          <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '6px', background: 'rgba(248,113,113,0.15)', color: '#f87171', fontWeight: 600 }}>❌ Incorrect</span>
+                        )}
+                      </div>
+                      {msg.feedback.isCorrect === false && msg.feedback.correctAnswer && (
+                        <div style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem', marginBottom: '0.5rem', borderRadius: '8px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)', color: '#fca5a5' }}>
+                          <strong>Correct Answer:</strong> {msg.feedback.correctAnswer}
+                        </div>
+                      )}
+                      {msg.feedback.strengths?.length > 0 && (
+                        <ul className="feedback-list strengths">
+                          {msg.feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                        </ul>
+                      )}
+                      {msg.feedback.improvements?.length > 0 && (
+                        <ul className="feedback-list improvements">
+                          {msg.feedback.improvements.map((s, i) => <li key={i}>{s}</li>)}
+                        </ul>
+                      )}
                     </div>
                   )}
-                  {msg.feedback.strengths?.length > 0 && (
-                    <ul className="feedback-list strengths">
-                      {msg.feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                  )}
-                  {msg.feedback.improvements?.length > 0 && (
-                    <ul className="feedback-list improvements">
-                      {msg.feedback.improvements.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                  )}
+                </motion.div>
+              ))}
+              {sending && (
+                <div className="typing-indicator">
+                  <span /><span /><span />
                 </div>
               )}
-            </motion.div>
-          ))}
-          {sending && (
-            <div className="typing-indicator">
-              <span /><span /><span />
+              <div ref={chatEndRef} />
             </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
 
-        {/* Overall Feedback (Review Phase) */}
-        {phase === 'review' && overallFeedback && (
-          <div className="overall-feedback-card">
-            <h3>📊 Interview Summary</h3>
-            <div className="feedback-score-large">{overallFeedback.totalScore}/100</div>
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              <span className="feedback-recommendation" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--neon-purple)' }}>
-                {overallFeedback.recommendation || 'N/A'}
-              </span>
+            <div className="chat-input-area">
+              <textarea className="chat-textarea" placeholder="Type your answer... (Shift+Enter for new line)" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} rows={2} disabled={sending} />
+              <button className="btn btn-primary send-btn" onClick={handleSend} disabled={!inputText.trim() || sending}>
+                <Send size={18} />
+              </button>
             </div>
-            {overallFeedback.summary && <p className="feedback-summary">{overallFeedback.summary}</p>}
-            <div className="feedback-areas">
-              <div className="feedback-area-col">
-                <h4>💪 Strong Areas</h4>
-                {(overallFeedback.strongAreas || []).map((a, i) => <span key={i} className="tag tag-success">{a}</span>)}
+          </>
+        ) : (
+          <div className="review-content">
+            {overallFeedback && (
+              <div className="overall-feedback-card">
+                <h3>📊 Interview Summary</h3>
+                <div className="feedback-score-large">{overallFeedback.totalScore}/100</div>
+                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                  <span className="feedback-recommendation" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--neon-purple)' }}>
+                    {overallFeedback.recommendation || 'N/A'}
+                  </span>
+                </div>
+                {overallFeedback.summary && <p className="feedback-summary">{overallFeedback.summary}</p>}
+                <div className="feedback-areas">
+                  <div className="feedback-area-col">
+                    <h4>💪 Strong Areas</h4>
+                    {(overallFeedback.strongAreas || []).map((a, i) => <span key={i} className="tag tag-success">{a}</span>)}
+                  </div>
+                  <div className="feedback-area-col">
+                    <h4>📈 Improve</h4>
+                    {(overallFeedback.improvementAreas || []).map((a, i) => <span key={i} className="tag tag-warning">{a}</span>)}
+                  </div>
+                </div>
+                <button className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }} onClick={resetInterview}>
+                  Start New Interview
+                </button>
               </div>
-              <div className="feedback-area-col">
-                <h4>📈 Improve</h4>
-                {(overallFeedback.improvementAreas || []).map((a, i) => <span key={i} className="tag tag-warning">{a}</span>)}
-              </div>
-            </div>
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }} onClick={resetInterview}>
-              Start New Interview
-            </button>
-          </div>
-        )}
-
-        {/* Chat Input (only in active chat) */}
-        {phase === 'chat' && (
-          <div className="chat-input-area">
-            <textarea className="chat-textarea" placeholder="Type your answer... (Shift+Enter for new line)" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} rows={2} disabled={sending} />
-            <button className="btn btn-primary send-btn" onClick={handleSend} disabled={!inputText.trim() || sending}>
-              <Send size={18} />
-            </button>
+            )}
           </div>
         )}
       </div>

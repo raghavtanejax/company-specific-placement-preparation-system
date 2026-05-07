@@ -157,79 +157,864 @@ const COMPANY_SKILL_MAP = {
   'wipro': ['java', 'python', 'sql', 'javascript', 'dsa'],
 };
 
-const SKILLS = [
-  'java', 'python', 'javascript', 'c++', 'c#', 'ruby', 'go', 'rust',
+// Skills with proper MCQ questions available
+const SKILLS_WITH_MCQS = ['java', 'python', 'javascript', 'dsa', 'sql', 'system design'];
+
+// Additional skills without specific MCQs (will only use coding questions if any)
+const OTHER_SKILLS = [
+  'c++', 'c#', 'ruby', 'go', 'rust',
   'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask', 'spring',
-  'mongodb', 'mysql', 'postgresql', 'sql', 'nosql', 'redis',
+  'mongodb', 'mysql', 'postgresql', 'nosql', 'redis',
   'aws', 'azure', 'gcp', 'docker', 'kubernetes',
-  'dsa', 'data structures', 'algorithms', 'system design', 'machine learning', 'ai'
+  'data structures', 'algorithms', 'machine learning', 'ai'
 ];
 
-const TEMPLATES = {
-  easy: [
-    { title: "What is the primary use of TARGET?", desc: "Identify the core purpose." },
-    { title: "Which of the following describes TARGET best?", desc: "Basic definition question." },
-    { title: "How do you start a basic project with TARGET?", desc: "Fundamental project setup." },
-    { title: "What is the standard file extension used in TARGET?", desc: "Basic syntax/file structure knowledge." },
-    { title: "Which command installs TARGET dependencies?", desc: "Basic package management." }
+// MCQ Question database by skill/category with realistic options
+const MCQ_QUESTIONS_BY_CATEGORY = {
+  'java': [
+    // Easy
+    {
+      title: 'What is the entry point of a Java program?',
+      description: 'Identify the method that serves as the entry point.',
+      difficulty: 'easy',
+      options: [
+        { text: 'public static void main(String[] args)', isCorrect: true },
+        { text: 'public void start()', isCorrect: false },
+        { text: 'public static void init()', isCorrect: false },
+        { text: 'public void run()', isCorrect: false }
+      ]
+    },
+    {
+      title: 'Which keyword is used to create a variable that cannot be changed?',
+      description: 'Find the keyword for immutable variables.',
+      difficulty: 'easy',
+      options: [
+        { text: 'final', isCorrect: true },
+        { text: 'static', isCorrect: false },
+        { text: 'const', isCorrect: false },
+        { text: 'immutable', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the default value of an integer variable in Java?',
+      description: 'Choose the default value for int variables.',
+      difficulty: 'easy',
+      options: [
+        { text: '0', isCorrect: true },
+        { text: 'null', isCorrect: false },
+        { text: '-1', isCorrect: false },
+        { text: 'undefined', isCorrect: false }
+      ]
+    },
+    {
+      title: 'Which of these is NOT a primitive data type in Java?',
+      description: 'Identify the non-primitive type.',
+      difficulty: 'easy',
+      options: [
+        { text: 'String', isCorrect: true },
+        { text: 'int', isCorrect: false },
+        { text: 'boolean', isCorrect: false },
+        { text: 'double', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What does JVM stand for?',
+      description: 'Expand the JVM acronym.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Java Virtual Machine', isCorrect: true },
+        { text: 'Java Variable Manager', isCorrect: false },
+        { text: 'Java Version Module', isCorrect: false },
+        { text: 'Java Vector Machine', isCorrect: false }
+      ]
+    },
+    // Medium
+    {
+      title: 'What is the difference between ArrayList and LinkedList?',
+      description: 'Compare ArrayList and LinkedList data structures.',
+      difficulty: 'medium',
+      options: [
+        { text: 'ArrayList uses array internally, LinkedList uses doubly-linked list', isCorrect: true },
+        { text: 'LinkedList is faster for all operations', isCorrect: false },
+        { text: 'ArrayList cannot store duplicates', isCorrect: false },
+        { text: 'LinkedList is thread-safe by default', isCorrect: false }
+      ]
+    },
+    {
+      title: 'Which collection is best for frequent insertions and deletions in the middle?',
+      description: 'Choose the optimal collection type.',
+      difficulty: 'medium',
+      options: [
+        { text: 'LinkedList', isCorrect: true },
+        { text: 'ArrayList', isCorrect: false },
+        { text: 'Array', isCorrect: false },
+        { text: 'TreeMap', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the purpose of the throws keyword in Java?',
+      description: 'Understand exception declaration.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Declares that a method may throw checked exceptions', isCorrect: true },
+        { text: 'Throws an exception immediately', isCorrect: false },
+        { text: 'Catches exceptions from methods', isCorrect: false },
+        { text: 'Prevents exceptions from occurring', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is method overloading?',
+      description: 'Define method overloading concept.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Having multiple methods with same name but different parameters', isCorrect: true },
+        { text: 'Calling a method multiple times', isCorrect: false },
+        { text: 'Extending a method from parent class', isCorrect: false },
+        { text: 'Creating static methods with same name', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is method overriding?',
+      description: 'Define method overriding concept.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Redefining parent class method in child class with same signature', isCorrect: true },
+        { text: 'Creating multiple versions of a method', isCorrect: false },
+        { text: 'Hiding parent class methods', isCorrect: false },
+        { text: 'Calling parent method from child method', isCorrect: false }
+      ]
+    },
+    // Hard
+    {
+      title: 'Explain the difference between shallow and deep copy.',
+      description: 'Understand shallow and deep copying mechanisms.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Shallow copy copies references only, deep copy creates new independent objects', isCorrect: true },
+        { text: 'Shallow copy is faster and always preferred', isCorrect: false },
+        { text: 'Deep copy is only for primitives', isCorrect: false },
+        { text: 'They are the same in Java', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the significance of the transient keyword?',
+      description: 'Understand the transient keyword in Java.',
+      difficulty: 'hard',
+      options: [
+        { text: 'It marks variables that should not be serialized', isCorrect: true },
+        { text: 'It makes variables thread-safe', isCorrect: false },
+        { text: 'It prevents garbage collection', isCorrect: false },
+        { text: 'It automatically initializes variables', isCorrect: false }
+      ]
+    }
   ],
-  medium: [
-    { title: "How does TARGET handle memory and state management?", desc: "Explain internal mechanics." },
-    { title: "What are the core lifecycle methods in TARGET?", desc: "Understand execution flow." },
-    { title: "How do you handle error boundaries in TARGET?", desc: "Implementation of safety checks." },
-    { title: "Explain the difference between synchronous and asynchronous operations in TARGET.", desc: "Concurrency." },
-    { title: "How do you optimize rendering/execution in TARGET?", desc: "Performance basics." }
+  'python': [
+    // Easy
+    {
+      title: 'What is the correct way to create a list in Python?',
+      description: 'Identify the correct list syntax.',
+      difficulty: 'easy',
+      options: [
+        { text: 'my_list = [1, 2, 3]', isCorrect: true },
+        { text: 'my_list = (1, 2, 3)', isCorrect: false },
+        { text: 'my_list = {1, 2, 3}', isCorrect: false },
+        { text: 'my_list = <1, 2, 3>', isCorrect: false }
+      ]
+    },
+    {
+      title: 'Which keyword is used to create a function in Python?',
+      description: 'Identify the function declaration keyword.',
+      difficulty: 'easy',
+      options: [
+        { text: 'def', isCorrect: true },
+        { text: 'function', isCorrect: false },
+        { text: 'define', isCorrect: false },
+        { text: 'func', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between a tuple and a list?',
+      description: 'Compare tuples and lists.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Tuples are immutable, lists are mutable', isCorrect: true },
+        { text: 'They are the same thing', isCorrect: false },
+        { text: 'Lists cannot contain duplicates', isCorrect: false },
+        { text: 'Tuples are faster than lists', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What does the len() function return for a string?',
+      description: 'Understand the len() function.',
+      difficulty: 'easy',
+      options: [
+        { text: 'The number of characters in the string', isCorrect: true },
+        { text: 'The first character of the string', isCorrect: false },
+        { text: 'The ASCII value of the string', isCorrect: false },
+        { text: 'A list of characters', isCorrect: false }
+      ]
+    },
+    {
+      title: 'Which data type is used to store key-value pairs?',
+      description: 'Identify the correct data structure.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Dictionary', isCorrect: true },
+        { text: 'List', isCorrect: false },
+        { text: 'Set', isCorrect: false },
+        { text: 'Tuple', isCorrect: false }
+      ]
+    },
+    // Medium
+    {
+      title: 'What is a list comprehension?',
+      description: 'Define list comprehension.',
+      difficulty: 'medium',
+      options: [
+        { text: 'A concise way to create lists by applying an expression to each element of an iterable', isCorrect: true },
+        { text: 'A method to compress lists', isCorrect: false },
+        { text: 'A way to understand lists better', isCorrect: false },
+        { text: 'A loop that cannot be broken', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a lambda function?',
+      description: 'Understand lambda functions.',
+      difficulty: 'medium',
+      options: [
+        { text: 'An anonymous function defined with lambda keyword', isCorrect: true },
+        { text: 'A function that processes lists', isCorrect: false },
+        { text: 'A function that never returns', isCorrect: false },
+        { text: 'A recursive function', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between == and is?',
+      description: 'Compare equality operators.',
+      difficulty: 'medium',
+      options: [
+        { text: '== checks value equality, is checks object identity', isCorrect: true },
+        { text: 'They are identical in Python', isCorrect: false },
+        { text: 'is is for numbers, == is for strings', isCorrect: false },
+        { text: 'is is more efficient than ==', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What does the *args parameter allow?',
+      description: 'Understand *args in functions.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Passing variable number of non-keyword arguments', isCorrect: true },
+        { text: 'Passing multiple keyword arguments', isCorrect: false },
+        { text: 'Multiplying arguments together', isCorrect: false },
+        { text: 'Accessing default arguments', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the Global Interpreter Lock (GIL)?',
+      description: 'Understand GIL in Python.',
+      difficulty: 'medium',
+      options: [
+        { text: 'A lock that allows only one thread to execute Python bytecode at a time', isCorrect: true },
+        { text: 'A protection mechanism for global variables', isCorrect: false },
+        { text: 'A requirement for parallel programming', isCorrect: false },
+        { text: 'A feature of Python 3 only', isCorrect: false }
+      ]
+    },
+    // Hard
+    {
+      title: 'Explain decorators in Python.',
+      description: 'Understand how decorators work in Python.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Functions that modify other functions or classes without permanently changing them', isCorrect: true },
+        { text: 'Functions that add visual decorations to code', isCorrect: false },
+        { text: 'A type of error handling mechanism', isCorrect: false },
+        { text: 'Methods for string formatting', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What are metaclasses?',
+      description: 'Understand metaclasses as classes of classes.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Classes whose instances are classes', isCorrect: true },
+        { text: 'Abstract base classes', isCorrect: false },
+        { text: 'Classes that inherit from multiple parents', isCorrect: false },
+        { text: 'Built-in classes in Python', isCorrect: false }
+      ]
+    }
   ],
-  hard: [
-    { title: "Explain the internal architectural engine of TARGET.", desc: "Deep dive into the source/engine." },
-    { title: "How would you scale a TARGET application to 1 million users?", desc: "System design and scaling." },
-    { title: "Describe customizing the AST or compilation pipeline for TARGET.", desc: "Advanced internal mechanisms." },
-    { title: "How to resolve race conditions in complex TARGET states?", desc: "Advanced debugging." }
+  'javascript': [
+    // Easy
+    {
+      title: 'How do you declare a variable in JavaScript?',
+      description: 'Identify the ways to declare variables.',
+      difficulty: 'easy',
+      options: [
+        { text: 'var, let, or const', isCorrect: true },
+        { text: 'Only var', isCorrect: false },
+        { text: 'int or string', isCorrect: false },
+        { text: 'variable or var', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between undefined and null?',
+      description: 'Compare undefined and null.',
+      difficulty: 'easy',
+      options: [
+        { text: 'undefined is unintentionally missing, null is intentionally empty', isCorrect: true },
+        { text: 'They are the same', isCorrect: false },
+        { text: 'null is for objects, undefined is for primitives', isCorrect: false },
+        { text: 'undefined is for variables, null is for functions', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What will console.log(typeof []) return?',
+      description: 'Understand the typeof operator.',
+      difficulty: 'easy',
+      options: [
+        { text: '"object"', isCorrect: true },
+        { text: '"array"', isCorrect: false },
+        { text: '"list"', isCorrect: false },
+        { text: '"undefined"', isCorrect: false }
+      ]
+    },
+    {
+      title: 'How do you add an element to the end of an array?',
+      description: 'Know array methods.',
+      difficulty: 'easy',
+      options: [
+        { text: 'array.push(element)', isCorrect: true },
+        { text: 'array.add(element)', isCorrect: false },
+        { text: 'array.append(element)', isCorrect: false },
+        { text: 'array.insert(element)', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the purpose of the === operator?',
+      description: 'Understand strict equality.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Strict equality comparison (value and type)', isCorrect: true },
+        { text: 'Loose equality comparison', isCorrect: false },
+        { text: 'Assignment operator', isCorrect: false },
+        { text: 'Comparison operator for strings only', isCorrect: false }
+      ]
+    },
+    // Medium
+    {
+      title: 'What is closure in JavaScript?',
+      description: 'Understand closures.',
+      difficulty: 'medium',
+      options: [
+        { text: 'A function that has access to variables from another function scope', isCorrect: true },
+        { text: 'A way to close a function', isCorrect: false },
+        { text: 'An error that stops code execution', isCorrect: false },
+        { text: 'A deprecated JavaScript feature', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between var, let, and const?',
+      description: 'Compare variable declarations.',
+      difficulty: 'medium',
+      options: [
+        { text: 'var is function-scoped, let and const are block-scoped; const cannot be reassigned', isCorrect: true },
+        { text: 'They are all identical', isCorrect: false },
+        { text: 'const is for numbers only', isCorrect: false },
+        { text: 'let is deprecated', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What does the spread operator (...) do?',
+      description: 'Understand the spread operator.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Expands an array or object into individual elements', isCorrect: true },
+        { text: 'Repeats an element multiple times', isCorrect: false },
+        { text: 'Creates a new variable scope', isCorrect: false },
+        { text: 'Concatenates strings', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between map and forEach?',
+      description: 'Compare array methods.',
+      difficulty: 'medium',
+      options: [
+        { text: 'map returns a new array, forEach does not', isCorrect: true },
+        { text: 'They are identical', isCorrect: false },
+        { text: 'forEach is faster than map', isCorrect: false },
+        { text: 'map only works with numbers', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Promise?',
+      description: 'Understand Promises.',
+      difficulty: 'medium',
+      options: [
+        { text: 'An object representing the eventual completion of an async operation', isCorrect: true },
+        { text: 'A guarantee that code will work', isCorrect: false },
+        { text: 'A way to break code execution', isCorrect: false },
+        { text: 'An error handling mechanism', isCorrect: false }
+      ]
+    },
+    // Hard
+    {
+      title: 'Explain Event Delegation.',
+      description: 'Understand event delegation pattern in JavaScript.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Attaching event listener to parent to handle events of child elements', isCorrect: true },
+        { text: 'Creating multiple event listeners for each element', isCorrect: false },
+        { text: 'Removing event listeners from elements', isCorrect: false },
+        { text: 'A method to prioritize event execution', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the Event Loop?',
+      description: 'Understand the event loop in JavaScript runtime.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Mechanism that handles async code execution by checking callback queue', isCorrect: true },
+        { text: 'A loop that never ends', isCorrect: false },
+        { text: 'A way to repeat events', isCorrect: false },
+        { text: 'An error in JavaScript engines', isCorrect: false }
+      ]
+    }
+  ],
+  'dsa': [
+    // Easy
+    {
+      title: 'What is Time Complexity?',
+      description: 'Define time complexity concept.',
+      difficulty: 'easy',
+      options: [
+        { text: 'A measure of how long an algorithm takes to run as input size grows', isCorrect: true },
+        { text: 'The total time an algorithm executes', isCorrect: false },
+        { text: 'How complex an algorithm is to understand', isCorrect: false },
+        { text: 'The number of variables used', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Space Complexity?',
+      description: 'Define space complexity concept.',
+      difficulty: 'easy',
+      options: [
+        { text: 'The amount of memory an algorithm uses as input size grows', isCorrect: true },
+        { text: 'The physical space a computer occupies', isCorrect: false },
+        { text: 'The number of lines of code', isCorrect: false },
+        { text: 'The amount of disk storage needed', isCorrect: false }
+      ]
+    },
+    {
+      title: 'Which sorting algorithm has the best average-case time complexity?',
+      description: 'Identify the optimal sorting algorithm.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Merge Sort or Quick Sort (O(n log n))', isCorrect: true },
+        { text: 'Bubble Sort (O(n²))', isCorrect: false },
+        { text: 'Insertion Sort (O(n²))', isCorrect: false },
+        { text: 'Selection Sort (O(n²))', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Hash Table?',
+      description: 'Define hash table data structure.',
+      difficulty: 'easy',
+      options: [
+        { text: 'A data structure that uses hash function to map keys to indices', isCorrect: true },
+        { text: 'A table of hashed passwords', isCorrect: false },
+        { text: 'A type of sorting algorithm', isCorrect: false },
+        { text: 'A deprecated data structure', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Stack?',
+      description: 'Define stack data structure.',
+      difficulty: 'easy',
+      options: [
+        { text: 'LIFO data structure (Last In First Out)', isCorrect: true },
+        { text: 'FIFO data structure (First In First Out)', isCorrect: false },
+        { text: 'A pile of papers in order', isCorrect: false },
+        { text: 'A memory management technique', isCorrect: false }
+      ]
+    },
+    // Medium
+    {
+      title: 'What is Binary Search and what is its time complexity?',
+      description: 'Understand binary search.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Search algorithm that divides sorted array in half, O(log n) time', isCorrect: true },
+        { text: 'Linear search through all elements, O(n) time', isCorrect: false },
+        { text: 'Searching for binary numbers, O(1) time', isCorrect: false },
+        { text: 'Searching two arrays, O(n²) time', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Linked List advantage over Array?',
+      description: 'Compare linked list and array.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Dynamic size and efficient insertion/deletion in middle', isCorrect: true },
+        { text: 'Faster random access', isCorrect: false },
+        { text: 'Uses less memory', isCorrect: false },
+        { text: 'Easier to implement', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Binary Search Tree (BST)?',
+      description: 'Define BST properties.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Tree where left child < parent < right child', isCorrect: true },
+        { text: 'A tree with only two levels', isCorrect: false },
+        { text: 'A tree used only for searching strings', isCorrect: false },
+        { text: 'A tree that is always perfectly balanced', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Dynamic Programming?',
+      description: 'Understand dynamic programming.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Technique to solve problems by breaking into subproblems and storing results', isCorrect: true },
+        { text: 'Programming that runs during runtime only', isCorrect: false },
+        { text: 'A type of sorting algorithm', isCorrect: false },
+        { text: 'Programming with dynamic variables', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Graph?',
+      description: 'Define graph data structure.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Collection of vertices/nodes connected by edges', isCorrect: true },
+        { text: 'A visual representation of data', isCorrect: false },
+        { text: 'An array of arrays', isCorrect: false },
+        { text: 'A type of sorting algorithm', isCorrect: false }
+      ]
+    },
+    // Hard
+    {
+      title: 'Explain NP-Complete problems.',
+      description: 'Understand NP-Complete problem complexity.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Problems whose solutions can be verified quickly but solved slowly, like TSP', isCorrect: true },
+        { text: 'Problems with no solution', isCorrect: false },
+        { text: 'Problems that only computers cannot solve', isCorrect: false },
+        { text: 'Problems related to network protocols', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the significance of Big O notation?',
+      description: 'Understand Big O notation and algorithm complexity.',
+      difficulty: 'hard',
+      options: [
+        { text: 'It describes the upper bound of algorithm complexity in worst case', isCorrect: true },
+        { text: 'It describes the exact time an algorithm takes', isCorrect: false },
+        { text: 'It is used for optimization only', isCorrect: false },
+        { text: 'It has no practical application', isCorrect: false }
+      ]
+    }
+  ],
+  'sql': [
+    // Easy
+    {
+      title: 'What is SQL?',
+      description: 'Define SQL.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Structured Query Language for managing databases', isCorrect: true },
+        { text: 'Simple Query Library', isCorrect: false },
+        { text: 'Standard Question Language', isCorrect: false },
+        { text: 'Secure Query Logic', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a PRIMARY KEY?',
+      description: 'Understand PRIMARY KEY constraint.',
+      difficulty: 'easy',
+      options: [
+        { text: 'A column that uniquely identifies each row in a table', isCorrect: true },
+        { text: 'The first column in a table', isCorrect: false },
+        { text: 'A password for the database', isCorrect: false },
+        { text: 'The most important column', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a FOREIGN KEY?',
+      description: 'Understand FOREIGN KEY constraint.',
+      difficulty: 'easy',
+      options: [
+        { text: 'A column that references PRIMARY KEY in another table', isCorrect: true },
+        { text: 'A key imported from outside', isCorrect: false },
+        { text: 'A key used for security', isCorrect: false },
+        { text: 'A backup key', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between SELECT and UPDATE?',
+      description: 'Compare SQL commands.',
+      difficulty: 'easy',
+      options: [
+        { text: 'SELECT retrieves data, UPDATE modifies existing data', isCorrect: true },
+        { text: 'They do the same thing', isCorrect: false },
+        { text: 'UPDATE creates new records', isCorrect: false },
+        { text: 'SELECT is faster than UPDATE', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a NULL value in SQL?',
+      description: 'Understand NULL in SQL.',
+      difficulty: 'easy',
+      options: [
+        { text: 'A value representing the absence of data or unknown value', isCorrect: true },
+        { text: 'The number zero', isCorrect: false },
+        { text: 'An empty string', isCorrect: false },
+        { text: 'A false boolean value', isCorrect: false }
+      ]
+    },
+    // Medium
+    {
+      title: 'What is a JOIN in SQL?',
+      description: 'Understand SQL JOIN.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Combining rows from multiple tables based on a related column', isCorrect: true },
+        { text: 'Combining all data from two tables', isCorrect: false },
+        { text: 'Creating a new table', isCorrect: false },
+        { text: 'Deleting rows from a table', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between INNER JOIN and LEFT JOIN?',
+      description: 'Compare JOIN types.',
+      difficulty: 'medium',
+      options: [
+        { text: 'INNER returns matching rows; LEFT returns all left table rows', isCorrect: true },
+        { text: 'They are the same', isCorrect: false },
+        { text: 'LEFT JOIN is faster', isCorrect: false },
+        { text: 'INNER JOIN includes all columns', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a GROUP BY clause used for?',
+      description: 'Understand GROUP BY.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Grouping rows sharing the same values for aggregate functions', isCorrect: true },
+        { text: 'Sorting data in groups', isCorrect: false },
+        { text: 'Creating multiple tables', isCorrect: false },
+        { text: 'Filtering rows before displaying', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is the difference between WHERE and HAVING?',
+      description: 'Compare WHERE and HAVING.',
+      difficulty: 'medium',
+      options: [
+        { text: 'WHERE filters rows, HAVING filters groups', isCorrect: true },
+        { text: 'They are identical', isCorrect: false },
+        { text: 'HAVING comes before WHERE', isCorrect: false },
+        { text: 'WHERE is for numbers, HAVING is for strings', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a subquery?',
+      description: 'Understand subqueries.',
+      difficulty: 'medium',
+      options: [
+        { text: 'A query within another query', isCorrect: true },
+        { text: 'A query that fails', isCorrect: false },
+        { text: 'A query that returns no results', isCorrect: false },
+        { text: 'An incomplete query', isCorrect: false }
+      ]
+    },
+    // Hard
+    {
+      title: 'What is Database Normalization?',
+      description: 'Understand database normalization and normal forms.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Process of organizing data to reduce redundancy and improve integrity', isCorrect: true },
+        { text: 'Making all data the same', isCorrect: false },
+        { text: 'Deleting unnecessary tables', isCorrect: false },
+        { text: 'Creating more indexes', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What are the benefits of using indexes?',
+      description: 'Understand database indexing benefits.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Faster data retrieval by reducing full table scans', isCorrect: true },
+        { text: 'Increased storage space', isCorrect: false },
+        { text: 'Automatic data backup', isCorrect: false },
+        { text: 'No benefits, just overhead', isCorrect: false }
+      ]
+    }
+  ],
+  'system design': [
+    // Easy
+    {
+      title: 'What is Scalability?',
+      description: 'Define scalability.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Ability of a system to handle increasing load efficiently', isCorrect: true },
+        { text: 'The size of the system', isCorrect: false },
+        { text: 'How many users are currently using it', isCorrect: false },
+        { text: 'The cost of the system', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Availability?',
+      description: 'Define availability.',
+      difficulty: 'easy',
+      options: [
+        { text: 'The percentage of time a system is operational', isCorrect: true },
+        { text: 'How many servers are available', isCorrect: false },
+        { text: 'Whether the system is online', isCorrect: false },
+        { text: 'The speed of the system', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Consistency?',
+      description: 'Define consistency in distributed systems.',
+      difficulty: 'easy',
+      options: [
+        { text: 'All nodes have the same data at the same time', isCorrect: true },
+        { text: 'Data never changes', isCorrect: false },
+        { text: 'All users see the same interface', isCorrect: false },
+        { text: 'The system follows the same protocols', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Load Balancing?',
+      description: 'Define load balancing.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Distributing network traffic across multiple servers', isCorrect: true },
+        { text: 'Balancing the weight of physical servers', isCorrect: false },
+        { text: 'Equalizing server costs', isCorrect: false },
+        { text: 'Checking server health', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a Cache?',
+      description: 'Define caching.',
+      difficulty: 'easy',
+      options: [
+        { text: 'Fast temporary storage for frequently accessed data', isCorrect: true },
+        { text: 'A backup storage', isCorrect: false },
+        { text: 'A security mechanism', isCorrect: false },
+        { text: 'A type of database', isCorrect: false }
+      ]
+    },
+    // Medium
+    {
+      title: 'What is the CAP Theorem?',
+      description: 'Understand CAP theorem.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Consistency, Availability, Partition tolerance - pick 2 in distributed systems', isCorrect: true },
+        { text: 'A theorem for data compression', isCorrect: false },
+        { text: 'A rule for database design', isCorrect: false },
+        { text: 'A security framework', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Database Replication?',
+      description: 'Understand database replication.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Copying data from one database to another for redundancy', isCorrect: true },
+        { text: 'Creating a backup file', isCorrect: false },
+        { text: 'Duplicating database schema', isCorrect: false },
+        { text: 'Splitting data across databases', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Database Sharding?',
+      description: 'Understand sharding.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Horizontally partitioning data across multiple databases', isCorrect: true },
+        { text: 'Vertical partitioning of data', isCorrect: false },
+        { text: 'Compressing database size', isCorrect: false },
+        { text: 'Creating backup shards', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is Message Queue?',
+      description: 'Understand message queues.',
+      difficulty: 'medium',
+      options: [
+        { text: 'System for asynchronous communication between services', isCorrect: true },
+        { text: 'A queue of pending messages', isCorrect: false },
+        { text: 'A way to send emails', isCorrect: false },
+        { text: 'A backup messaging system', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is a CDN?',
+      description: 'Understand CDN.',
+      difficulty: 'medium',
+      options: [
+        { text: 'Content Delivery Network - serves content from servers near users', isCorrect: true },
+        { text: 'A database for content', isCorrect: false },
+        { text: 'A video streaming service', isCorrect: false },
+        { text: 'A messaging protocol', isCorrect: false }
+      ]
+    },
+    // Hard
+    {
+      title: 'What is Microservices Architecture?',
+      description: 'Understand microservices architecture and design patterns.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Building application as collection of loosely coupled independent services', isCorrect: true },
+        { text: 'Making services very small', isCorrect: false },
+        { text: 'Breaking a monolith randomly', isCorrect: false },
+        { text: 'A type of database architecture', isCorrect: false }
+      ]
+    },
+    {
+      title: 'What is ACID in databases?',
+      description: 'Understand ACID properties in database transactions.',
+      difficulty: 'hard',
+      options: [
+        { text: 'Atomicity, Consistency, Isolation, Durability - transaction properties', isCorrect: true },
+        { text: 'A chemical compound', isCorrect: false },
+        { text: 'A corruption pattern', isCorrect: false },
+        { text: 'A network protocol', isCorrect: false }
+      ]
+    }
   ]
 };
 
 const generateQuestionsForSkill = (skill, companySlug = null) => {
   const questions = [];
   
-  // Create fewer questions per company-skill combo to keep DB manageable
-  const easyCnt = companySlug ? 5 : 20;
-  const medCnt = companySlug ? 5 : 20;
-  const hardCnt = companySlug ? 3 : 10;
+  // Get category-specific MCQs if available
+  const categoryQuestions = MCQ_QUESTIONS_BY_CATEGORY[skill] || [];
   
-  const addQuestions = (level, count) => {
-    for(let i=1; i<=count; i++) {
-      const template = TEMPLATES[level][i % TEMPLATES[level].length];
-      const isCoding = (level === 'hard' && i % 3 === 0);
-      
-      let q = {
-        title: template.title.replace(/TARGET/g, skill.toUpperCase()) + ` ([${level.toUpperCase()}] Q${i})`,
-        description: template.desc,
-        difficulty: level,
+  if (categoryQuestions.length > 0) {
+    // Use real category-specific questions
+    categoryQuestions.forEach((q, idx) => {
+      questions.push({
+        title: q.title,
+        description: q.description || '',
+        difficulty: q.difficulty,
         skills: [skill],
         company: companySlug ? [companySlug] : [],
-        type: isCoding ? 'coding' : 'mcq',
-      };
-
-      if (isCoding) {
-        q.testCases = [
-          { input: 'Sample Input', expectedOutput: 'Expected Output for ' + skill }
-        ];
-      } else {
-        q.options = [
-          { text: `An essential feature of ${skill}`, isCorrect: true },
-          { text: `An outdated method in ${skill}`, isCorrect: false },
-          { text: `A deprecated module in ${skill}`, isCorrect: false },
-          { text: `Concept from a different technology`, isCorrect: false }
-        ];
-      }
-      
-      questions.push(q);
-    }
-  };
-
-  addQuestions('easy', easyCnt);
-  addQuestions('medium', medCnt);
-  addQuestions('hard', hardCnt);
+        type: 'mcq',
+        options: q.options
+      });
+    });
+  }
   
   return questions;
 };
@@ -820,21 +1605,23 @@ const seedDatabase = async () => {
 
     let allQuestions = [];
     
-    // Generate general questions (not tagged with any company)
-    for(const skill of SKILLS) {
+    // Generate MCQ questions for skills with proper question banks
+    for(const skill of SKILLS_WITH_MCQS) {
       const generated = generateQuestionsForSkill(skill);
       allQuestions = allQuestions.concat(generated);
     }
-    console.log(`Generated ${allQuestions.length} general questions`);
+    console.log(`Generated ${allQuestions.length} MCQ questions from category-specific banks`);
 
-    // Generate company-specific questions
+    // Generate company-specific MCQ questions
     for (const [companySlug, skills] of Object.entries(COMPANY_SKILL_MAP)) {
       for (const skill of skills) {
-        const generated = generateQuestionsForSkill(skill, companySlug);
-        allQuestions = allQuestions.concat(generated);
+        if (SKILLS_WITH_MCQS.includes(skill)) {
+          const generated = generateQuestionsForSkill(skill, companySlug);
+          allQuestions = allQuestions.concat(generated);
+        }
       }
     }
-    console.log(`Total questions (including company-specific): ${allQuestions.length}`);
+    console.log(`Added company-specific questions. Total MCQs: ${allQuestions.length}`);
 
     // Add real coding questions with proper test cases
     allQuestions = allQuestions.concat(CODING_QUESTIONS);
@@ -848,7 +1635,7 @@ const seedDatabase = async () => {
       console.log(`Inserted batch ${Math.floor(i / batchSize) + 1}`);
     }
 
-    console.log(`Successfully seeded ${allQuestions.length} questions and ${COMPANIES.length} companies!`);
+    console.log(`✅ Successfully seeded ${allQuestions.length} questions and ${COMPANIES.length} companies!`);
     mongoose.disconnect();
   } catch(e) {
     console.error('Seeding error:', e);
