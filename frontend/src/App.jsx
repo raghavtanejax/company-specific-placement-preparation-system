@@ -16,11 +16,24 @@ import NewExperience from './pages/NewExperience';
 import Leaderboard from './pages/Leaderboard';
 import MockInterview from './pages/MockInterview';
 import Discussions from './pages/Discussions';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Simple Auth Guard
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   return token ? children : <Navigate to="/login" />;
+};
+
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  let user = null;
+  try {
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    user = null;
+  }
+  return token && user && user.role === 'admin' ? children : <Navigate to="/dashboard" />;
 };
 
 function App() {
@@ -134,6 +147,14 @@ function App() {
                 <PrivateRoute>
                   <Discussions />
                 </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
               } 
             />
             <Route path="*" element={<Navigate to="/dashboard" />} />

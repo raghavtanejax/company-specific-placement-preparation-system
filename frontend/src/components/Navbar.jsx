@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare, Trophy, Mic, MessagesSquare } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare, Trophy, Mic, MessagesSquare, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './Navbar.css';
 
@@ -17,6 +17,13 @@ const Navbar = () => {
 
   if (!token) return null; // Don't show navbar on login/register pages
 
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('user'));
+  } catch (e) {
+    user = null;
+  }
+
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { name: 'Companies', path: '/companies', icon: <Building2 size={18} /> },
@@ -29,6 +36,10 @@ const Navbar = () => {
     { name: 'Bookmarks', path: '/bookmarks', icon: <Bookmark size={18} /> },
     { name: 'Experiences', path: '/experiences', icon: <MessageSquare size={18} /> },
   ];
+
+  if (user && user.role === 'admin') {
+    navLinks.push({ name: 'Admin', path: '/admin', icon: <Activity size={18} /> });
+  }
 
   return (
     <nav className="navbar glass-panel">

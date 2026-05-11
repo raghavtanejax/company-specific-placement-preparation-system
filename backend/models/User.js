@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
   performance: {
     totalQuizzesTaken: { type: Number, default: 0 },
     totalScore: { type: Number, default: 0 },

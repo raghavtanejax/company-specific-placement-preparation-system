@@ -9,9 +9,29 @@ import { createExperience, getAllExperiences, getExperienceById, toggleUpvote } 
 import { getLeaderboard, getTopPerformers } from '../controllers/leaderboardController.js';
 import { startInterview, respondToInterview, endInterview, getInterviewHistory, getInterviewById } from '../controllers/mockInterviewController.js';
 import { createDiscussion, getDiscussionsByQuestion, getAllDiscussions, addReply, toggleDiscussionUpvote, toggleReplyUpvote } from '../controllers/discussionController.js';
+import { 
+  getDashboardStats, 
+  getAllUsers, deleteUser, updateUserRole, 
+  getAllCompaniesAdmin, deleteCompany, 
+  getAllQuestionsAdmin, deleteQuestion 
+} from '../controllers/adminController.js';
 import { auth } from '../middleware/auth.js';
+import { adminAuth } from '../middleware/adminAuth.js';
 
 const router = express.Router();
+
+// Admin routes
+router.get('/admin/dashboard', auth, adminAuth, getDashboardStats);
+
+router.get('/admin/users', auth, adminAuth, getAllUsers);
+router.delete('/admin/users/:id', auth, adminAuth, deleteUser);
+router.put('/admin/users/:id/role', auth, adminAuth, updateUserRole);
+
+router.get('/admin/companies', auth, adminAuth, getAllCompaniesAdmin);
+router.delete('/admin/companies/:id', auth, adminAuth, deleteCompany);
+
+router.get('/admin/questions', auth, adminAuth, getAllQuestionsAdmin);
+router.delete('/admin/questions/:id', auth, adminAuth, deleteQuestion);
 
 // Auth routes
 router.post('/auth/register', register);
