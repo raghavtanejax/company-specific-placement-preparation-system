@@ -11,7 +11,7 @@ const PeerInterview = () => {
   const [roomId, setRoomId] = useState('');
   const [inRoom, setInRoom] = useState(false);
   const [activeTab, setActiveTab] = useState('code'); // 'code' | 'whiteboard'
-  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const excalidrawAPIRef = useRef(null);
   
   // Media states
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -100,8 +100,8 @@ const PeerInterview = () => {
     });
 
     socketRef.current.on('whiteboard-change', (elements) => {
-      if (excalidrawAPI) {
-        excalidrawAPI.updateScene({ elements });
+      if (excalidrawAPIRef.current) {
+        excalidrawAPIRef.current.updateScene({ elements });
       }
     });
 
@@ -110,7 +110,7 @@ const PeerInterview = () => {
       localStreamRef.current?.getTracks().forEach(track => track.stop());
       peerRef.current?.close();
     };
-  }, [excalidrawAPI]);
+  }, []);
 
   const createPeer = (targetId, callerId, stream) => {
     const peer = new RTCPeerConnection({
@@ -250,10 +250,10 @@ const PeerInterview = () => {
               />
             </div>
           ) : (
-            <div className="whiteboard-wrapper glass-panel">
+            <div className="whiteboard-wrapper glass-panel" style={{ width: '100%', height: '100%' }}>
               <Excalidraw 
                 theme="dark" 
-                excalidrawAPI={(api) => setExcalidrawAPI(api)}
+                excalidrawAPI={(api) => { excalidrawAPIRef.current = api; }}
                 onChange={(elements, appState) => {
                   // Only emit if we are actually editing to prevent infinite loops
                   if (appState.draggingElement || appState.editingElement || appState.resizingElement || appState.multiElement) {
