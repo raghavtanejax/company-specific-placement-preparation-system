@@ -137,3 +137,8 @@
   overflow: hidden;
   position: relative;
 }
+
+/* Fix for Excalidraw giant SVGs in Vite */
+.whiteboard-wrapper .excalidraw svg {
+  max-width: 100%;
+}
