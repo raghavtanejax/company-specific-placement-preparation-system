@@ -67,7 +67,7 @@ const Navbar = () => {
 
         <button onClick={handleLogout} className="btn btn-secondary logout-btn">
           <LogOut size={18} />
-          Logout
+          <span className="logout-text">Logout</span>
         </button>
       </div>
     </nav>

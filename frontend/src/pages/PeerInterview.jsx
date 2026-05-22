@@ -12,6 +12,7 @@ const PeerInterview = () => {
   const [roomId, setRoomId] = useState('');
   const [inRoom, setInRoom] = useState(false);
   const [activeTab, setActiveTab] = useState('code'); // 'code' | 'whiteboard'
+  const [peerCount, setPeerCount] = useState(1); // Track connected peers
   
   // Media states
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -27,6 +28,7 @@ const PeerInterview = () => {
   const lastPointRef = useRef(null);
   const canvasRef = useRef(null);
   const drawingsRef = useRef([]); // Store all drawing strokes
+  const roomIdRef = useRef(''); // Keep roomId accessible in socket handlers
   
   // Refs for WebRTC and Sockets
   const socketRef = useRef();
@@ -48,6 +50,7 @@ const PeerInterview = () => {
 
     socketRef.current.on('user-joined', async ({ socketId }) => {
       console.log('Another user joined:', socketId);
+      setPeerCount(2);
       const peer = createPeer(socketId, socketRef.current.id, localStreamRef.current);
       peerRef.current = peer;
       
@@ -66,6 +69,7 @@ const PeerInterview = () => {
 
     socketRef.current.on('offer', async (payload) => {
       console.log('Received offer');
+      setPeerCount(2);
       const peer = createPeer(payload.callerId, socketRef.current.id, localStreamRef.current);
       peerRef.current = peer;
       
@@ -108,10 +112,24 @@ const PeerInterview = () => {
       setCode(newCode);
     });
 
+    // Sync existing code when joining late
+    socketRef.current.on('code-sync', (existingCode) => {
+      console.log('Received code sync from server');
+      setCode(existingCode);
+    });
+
     // Receive drawing strokes from the peer
     socketRef.current.on('whiteboard-draw', (stroke) => {
       drawingsRef.current.push(stroke);
       drawStroke(stroke);
+    });
+
+    // Sync existing whiteboard when joining late
+    socketRef.current.on('whiteboard-sync', (strokes) => {
+      console.log('Received whiteboard sync from server:', strokes.length, 'strokes');
+      drawingsRef.current = strokes;
+      // If canvas is visible, redraw immediately
+      redrawCanvas();
     });
 
     // Receive clear whiteboard from the peer
@@ -130,18 +148,44 @@ const PeerInterview = () => {
   // Setup canvas when whiteboard tab is shown
   useEffect(() => {
     if (activeTab === 'whiteboard' && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const container = canvas.parentElement;
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight - 50; // Leave room for toolbar
-      
-      // Redraw all existing strokes
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      drawingsRef.current.forEach(stroke => drawStroke(stroke));
+      resizeCanvas();
     }
   }, [activeTab]);
+
+  // Handle window resize for canvas
+  useEffect(() => {
+    const handleResize = () => {
+      if (activeTab === 'whiteboard' && canvasRef.current) {
+        resizeCanvas();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [activeTab]);
+
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    const toolbar = container.querySelector('.whiteboard-toolbar');
+    const toolbarHeight = toolbar ? toolbar.offsetHeight : 50;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight - toolbarHeight;
+    
+    // Redraw all existing strokes after resize
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawingsRef.current.forEach(stroke => drawStroke(stroke));
+  };
+
+  const redrawCanvas = () => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    drawingsRef.current.forEach(stroke => drawStroke(stroke));
+  };
 
   const drawStroke = (stroke) => {
     if (!canvasRef.current) return;
@@ -212,14 +256,14 @@ const PeerInterview = () => {
     const stroke = lastPointRef.current;
     drawingsRef.current.push(stroke);
     // Send the full stroke to the peer
-    socketRef.current.emit('whiteboard-draw', { roomId, stroke });
+    socketRef.current.emit('whiteboard-draw', { roomId: roomIdRef.current, stroke });
     lastPointRef.current = null;
   };
 
   const handleClearWhiteboard = () => {
     drawingsRef.current = [];
     clearCanvas();
-    socketRef.current.emit('whiteboard-clear', { roomId });
+    socketRef.current.emit('whiteboard-clear', { roomId: roomIdRef.current });
   };
 
   const createPeer = (targetId, callerId, stream) => {
@@ -260,6 +304,7 @@ const PeerInterview = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
+      roomIdRef.current = roomId;
       setInRoom(true);
       socketRef.current.emit('join-room', roomId, 'user-id-temp');
     } catch (err) {
@@ -289,7 +334,7 @@ const PeerInterview = () => {
 
   const handleCodeChange = (value) => {
     setCode(value);
-    socketRef.current.emit('code-change', { roomId, code: value });
+    socketRef.current.emit('code-change', { roomId: roomIdRef.current, code: value });
   };
 
   if (!inRoom) {
@@ -316,7 +361,7 @@ const PeerInterview = () => {
     <div className="peer-room">
       <div className="room-topbar">
         <div className="room-info">
-          <span className="room-badge">Room: {roomId}</span>
+          <span className="room-badge">Room: {roomIdRef.current}</span>
           <div className="tab-switcher">
             <button className={`tab-btn ${activeTab === 'code' ? 'active' : ''}`} onClick={() => setActiveTab('code')}><Code size={16}/> Code</button>
             <button className={`tab-btn ${activeTab === 'whiteboard' ? 'active' : ''}`} onClick={() => setActiveTab('whiteboard')}><PenTool size={16}/> Whiteboard</button>
@@ -356,7 +401,7 @@ const PeerInterview = () => {
                 theme="vs-dark"
                 value={code}
                 onChange={handleCodeChange}
-                options={{ minimap: { enabled: false }, fontSize: 16 }}
+                options={{ minimap: { enabled: false }, fontSize: 14 }}
               />
             </div>
           ) : (
@@ -382,8 +427,8 @@ const PeerInterview = () => {
                     onChange={(e) => setPenSize(Number(e.target.value))}
                   />
                 </div>
-                <button className="btn btn-danger icon-btn" onClick={handleClearWhiteboard} title="Clear Board">
-                  <Trash2 size={16} /> Clear
+                <button className="btn btn-danger icon-btn clear-btn" onClick={handleClearWhiteboard} title="Clear Board">
+                  <Trash2 size={16} /> <span className="clear-text">Clear</span>
                 </button>
               </div>
               <canvas

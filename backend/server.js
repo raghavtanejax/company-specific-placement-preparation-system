@@ -21,6 +21,9 @@ const io = new Server(server, {
   }
 });
 
+// In-memory room state for syncing late joiners
+const roomState = new Map();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -41,6 +44,18 @@ io.on('connection', (socket) => {
   socket.on('join-room', (roomId, userId) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room ${roomId}`);
+    
+    // Send existing room state to the late joiner
+    const state = roomState.get(roomId);
+    if (state) {
+      if (state.strokes && state.strokes.length > 0) {
+        socket.emit('whiteboard-sync', state.strokes);
+      }
+      if (state.code !== undefined) {
+        socket.emit('code-sync', state.code);
+      }
+    }
+    
     socket.to(roomId).emit('user-joined', { socketId: socket.id, userId });
   });
 
@@ -57,19 +72,36 @@ io.on('connection', (socket) => {
   });
 
   socket.on('code-change', (data) => {
+    // Persist code state
+    if (!roomState.has(data.roomId)) roomState.set(data.roomId, { strokes: [], code: '' });
+    roomState.get(data.roomId).code = data.code;
     socket.to(data.roomId).emit('code-change', data.code);
   });
 
   socket.on('whiteboard-draw', (data) => {
+    // Persist whiteboard strokes
+    if (!roomState.has(data.roomId)) roomState.set(data.roomId, { strokes: [], code: '' });
+    roomState.get(data.roomId).strokes.push(data.stroke);
     socket.to(data.roomId).emit('whiteboard-draw', data.stroke);
   });
 
   socket.on('whiteboard-clear', (data) => {
+    // Clear persisted strokes
+    if (roomState.has(data.roomId)) {
+      roomState.get(data.roomId).strokes = [];
+    }
     socket.to(data.roomId).emit('whiteboard-clear');
   });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    // Clean up empty rooms
+    for (const [roomId, state] of roomState.entries()) {
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room || room.size === 0) {
+        roomState.delete(roomId);
+      }
+    }
   });
 });
 
