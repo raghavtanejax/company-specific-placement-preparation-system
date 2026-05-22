@@ -38,28 +38,50 @@ const PeerInterview = () => {
 
     socketRef.current.on('user-joined', async ({ socketId }) => {
       console.log('Another user joined:', socketId);
-      // We are the caller (already in room)
       const peer = createPeer(socketId, socketRef.current.id, localStreamRef.current);
       peerRef.current = peer;
+      
+      try {
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+        socketRef.current.emit('offer', {
+          target: socketId,
+          callerId: socketRef.current.id,
+          sdp: offer
+        });
+      } catch (e) {
+        console.error('Error creating explicit offer', e);
+      }
     });
 
     socketRef.current.on('offer', async (payload) => {
       console.log('Received offer');
       const peer = createPeer(payload.callerId, socketRef.current.id, localStreamRef.current);
       peerRef.current = peer;
-      await peer.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
-      socketRef.current.emit('answer', {
-        target: payload.callerId,
-        callerId: socketRef.current.id,
-        sdp: answer
-      });
+      
+      try {
+        await peer.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        socketRef.current.emit('answer', {
+          target: payload.callerId,
+          callerId: socketRef.current.id,
+          sdp: answer
+        });
+      } catch (e) {
+        console.error('Error handling offer', e);
+      }
     });
 
     socketRef.current.on('answer', async (payload) => {
       console.log('Received answer');
-      await peerRef.current.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      try {
+        if (peerRef.current) {
+          await peerRef.current.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        }
+      } catch (e) {
+        console.error('Error handling answer', e);
+      }
     });
 
     socketRef.current.on('ice-candidate', async (incoming) => {
@@ -109,20 +131,6 @@ const PeerInterview = () => {
     peer.ontrack = (event) => {
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    peer.onnegotiationneeded = async () => {
-      try {
-        const offer = await peer.createOffer();
-        await peer.setLocalDescription(offer);
-        socketRef.current.emit('offer', {
-          target: targetId,
-          callerId: callerId,
-          sdp: offer
-        });
-      } catch (e) {
-        console.error('Error creating offer', e);
       }
     };
 
