@@ -131,14 +131,76 @@
   overflow: hidden;
 }
 
-.editor-wrapper, .whiteboard-wrapper {
+.editor-wrapper {
   flex: 1;
   border-radius: 12px;
   overflow: hidden;
-  position: relative;
 }
 
-/* Fix for Excalidraw giant SVGs in Vite */
-.whiteboard-wrapper .excalidraw svg {
-  max-width: 100%;
+.whiteboard-wrapper {
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Whiteboard Toolbar */
+.whiteboard-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.color-picker {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  padding: 0;
+}
+
+.color-dot:hover {
+  transform: scale(1.2);
+}
+
+.color-dot.active {
+  border-color: #fff;
+  transform: scale(1.25);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.size-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.size-picker input[type="range"] {
+  width: 100px;
+  accent-color: var(--neon-blue);
+  cursor: pointer;
+}
+
+/* Canvas */
+.whiteboard-canvas {
+  flex: 1;
+  display: block;
+  background: #1a1a2e;
+  cursor: crosshair;
+  touch-action: none; /* Prevent scrolling on mobile */
 }

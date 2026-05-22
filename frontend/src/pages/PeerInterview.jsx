@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Editor } from '@monaco-editor/react';
-import { Excalidraw } from '@excalidraw/excalidraw';
-import { Video, VideoOff, Mic, MicOff, PhoneOff, Code, PenTool, Users } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, PhoneOff, Code, PenTool, Users, Trash2 } from 'lucide-react';
 import './PeerInterview.css';
 
 const SOCKET_URL = import.meta.env.MODE === 'production' ? 'https://company-specific-placement-preparation.onrender.com' : 'http://localhost:5001';
+
+const COLORS = ['#ffffff', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bff'];
 
 const PeerInterview = () => {
   const [roomId, setRoomId] = useState('');
   const [inRoom, setInRoom] = useState(false);
   const [activeTab, setActiveTab] = useState('code'); // 'code' | 'whiteboard'
-  const excalidrawAPIRef = useRef(null);
   
   // Media states
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -19,6 +19,14 @@ const PeerInterview = () => {
   
   // Code editor state
   const [code, setCode] = useState('// Welcome to collaborative coding\nfunction solution() {\n  \n}');
+
+  // Whiteboard state
+  const [penColor, setPenColor] = useState('#ffffff');
+  const [penSize, setPenSize] = useState(3);
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef(null);
+  const canvasRef = useRef(null);
+  const drawingsRef = useRef([]); // Store all drawing strokes
   
   // Refs for WebRTC and Sockets
   const socketRef = useRef();
@@ -27,14 +35,15 @@ const PeerInterview = () => {
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
   
+  // Attach local video when entering the room
   useEffect(() => {
     if (inRoom && localVideoRef.current && localStreamRef.current) {
       localVideoRef.current.srcObject = localStreamRef.current;
     }
   }, [inRoom]);
 
+  // Initialize Socket.io (runs once)
   useEffect(() => {
-    // Initialize Socket.io
     socketRef.current = io(SOCKET_URL);
 
     socketRef.current.on('user-joined', async ({ socketId }) => {
@@ -99,10 +108,16 @@ const PeerInterview = () => {
       setCode(newCode);
     });
 
-    socketRef.current.on('whiteboard-change', (elements) => {
-      if (excalidrawAPIRef.current) {
-        excalidrawAPIRef.current.updateScene({ elements });
-      }
+    // Receive drawing strokes from the peer
+    socketRef.current.on('whiteboard-draw', (stroke) => {
+      drawingsRef.current.push(stroke);
+      drawStroke(stroke);
+    });
+
+    // Receive clear whiteboard from the peer
+    socketRef.current.on('whiteboard-clear', () => {
+      drawingsRef.current = [];
+      clearCanvas();
     });
 
     return () => {
@@ -111,6 +126,101 @@ const PeerInterview = () => {
       peerRef.current?.close();
     };
   }, []);
+
+  // Setup canvas when whiteboard tab is shown
+  useEffect(() => {
+    if (activeTab === 'whiteboard' && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight - 50; // Leave room for toolbar
+      
+      // Redraw all existing strokes
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawingsRef.current.forEach(stroke => drawStroke(stroke));
+    }
+  }, [activeTab]);
+
+  const drawStroke = (stroke) => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (stroke.points.length > 0) {
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+      ctx.stroke();
+    }
+  };
+
+  const clearCanvas = () => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  };
+
+  const getCanvasPoint = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const handleCanvasMouseDown = (e) => {
+    e.preventDefault();
+    isDrawingRef.current = true;
+    const point = getCanvasPoint(e);
+    lastPointRef.current = { color: penColor, size: penSize, points: [point] };
+  };
+
+  const handleCanvasMouseMove = (e) => {
+    e.preventDefault();
+    if (!isDrawingRef.current || !lastPointRef.current) return;
+    const point = getCanvasPoint(e);
+    lastPointRef.current.points.push(point);
+    
+    // Draw locally in real-time
+    const ctx = canvasRef.current.getContext('2d');
+    const pts = lastPointRef.current.points;
+    ctx.strokeStyle = lastPointRef.current.color;
+    ctx.lineWidth = lastPointRef.current.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+  };
+
+  const handleCanvasMouseUp = (e) => {
+    if (e) e.preventDefault();
+    if (!isDrawingRef.current || !lastPointRef.current) return;
+    isDrawingRef.current = false;
+    
+    const stroke = lastPointRef.current;
+    drawingsRef.current.push(stroke);
+    // Send the full stroke to the peer
+    socketRef.current.emit('whiteboard-draw', { roomId, stroke });
+    lastPointRef.current = null;
+  };
+
+  const handleClearWhiteboard = () => {
+    drawingsRef.current = [];
+    clearCanvas();
+    socketRef.current.emit('whiteboard-clear', { roomId });
+  };
 
   const createPeer = (targetId, callerId, stream) => {
     const peer = new RTCPeerConnection({
@@ -151,7 +261,7 @@ const PeerInterview = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
       setInRoom(true);
-      socketRef.current.emit('join-room', roomId, 'user-id-temp'); // Can pass actual user ID
+      socketRef.current.emit('join-room', roomId, 'user-id-temp');
     } catch (err) {
       console.error('Failed to get local stream', err);
       alert('Could not access camera/microphone');
@@ -174,7 +284,7 @@ const PeerInterview = () => {
     setInRoom(false);
     peerRef.current?.close();
     localStreamRef.current?.getTracks().forEach(track => track.stop());
-    window.location.reload(); // Quick reset
+    window.location.reload();
   };
 
   const handleCodeChange = (value) => {
@@ -250,16 +360,42 @@ const PeerInterview = () => {
               />
             </div>
           ) : (
-            <div className="whiteboard-wrapper glass-panel" style={{ width: '100%', height: '100%' }}>
-              <Excalidraw 
-                theme="dark" 
-                excalidrawAPI={(api) => { excalidrawAPIRef.current = api; }}
-                onChange={(elements, appState) => {
-                  // Only emit if we are actually editing to prevent infinite loops
-                  if (appState.draggingElement || appState.editingElement || appState.resizingElement || appState.multiElement) {
-                    socketRef.current.emit('whiteboard-change', { roomId, elements });
-                  }
-                }}
+            <div className="whiteboard-wrapper glass-panel">
+              <div className="whiteboard-toolbar">
+                <div className="color-picker">
+                  {COLORS.map(color => (
+                    <button
+                      key={color}
+                      className={`color-dot ${penColor === color ? 'active' : ''}`}
+                      style={{ background: color }}
+                      onClick={() => setPenColor(color)}
+                    />
+                  ))}
+                </div>
+                <div className="size-picker">
+                  <label>Size:</label>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    value={penSize} 
+                    onChange={(e) => setPenSize(Number(e.target.value))}
+                  />
+                </div>
+                <button className="btn btn-danger icon-btn" onClick={handleClearWhiteboard} title="Clear Board">
+                  <Trash2 size={16} /> Clear
+                </button>
+              </div>
+              <canvas
+                ref={canvasRef}
+                className="whiteboard-canvas"
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseUp}
+                onTouchStart={handleCanvasMouseDown}
+                onTouchMove={handleCanvasMouseMove}
+                onTouchEnd={handleCanvasMouseUp}
               />
             </div>
           )}

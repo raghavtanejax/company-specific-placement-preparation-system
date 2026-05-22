@@ -60,8 +60,12 @@ io.on('connection', (socket) => {
     socket.to(data.roomId).emit('code-change', data.code);
   });
 
-  socket.on('whiteboard-change', (data) => {
-    socket.to(data.roomId).emit('whiteboard-change', data.elements);
+  socket.on('whiteboard-draw', (data) => {
+    socket.to(data.roomId).emit('whiteboard-draw', data.stroke);
+  });
+
+  socket.on('whiteboard-clear', (data) => {
+    socket.to(data.roomId).emit('whiteboard-clear');
   });
 
   socket.on('disconnect', () => {
