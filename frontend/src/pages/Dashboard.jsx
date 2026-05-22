@@ -40,10 +40,7 @@ const Dashboard = () => {
     fetchProfile();
   }, []);
 
-  if (loading) return <div className="loading">Loading dashboard...</div>;
-  if (!profile) return <div className="loading">Error loading dashboard</div>;
-
-  const { performance, recentQuizzes } = profile;
+  const { performance, recentQuizzes, name } = profile || {};
   
   const safePerformance = performance || {
     totalQuestionsAttempted: 0,
@@ -67,7 +64,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <h1 className="text-gradient">Welcome back, {profile.name}!</h1>
+        <h1 className="text-gradient">Welcome back{name ? `, ${name}` : ''}!</h1>
         <p>Track your placement preparation journey.</p>
       </header>
 

@@ -236,9 +236,7 @@ const Discussions = () => {
         </button>
       </div>
 
-      {loading ? (
-        <div className="loading">Loading discussions...</div>
-      ) : discussions.length === 0 ? (
+      {discussions.length === 0 && !loading ? (
         <div className="empty-discussions glass-panel">
           <div className="empty-icon">💬</div>
           <p>No discussions yet. Start the conversation!</p>

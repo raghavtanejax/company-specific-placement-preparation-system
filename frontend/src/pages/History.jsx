@@ -32,7 +32,7 @@ const History = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div className="loading">Loading your history...</div>;
+
 
   const topicData = analytics?.topicAccuracy
     ? Object.entries(analytics.topicAccuracy).map(([topic, accuracy]) => ({
@@ -158,7 +158,7 @@ const History = () => {
 
       {activeTab === 'history' && (
         <div className="history-list">
-          {history.length === 0 ? (
+          {history.length === 0 && !loading ? (
             <div className="empty-state glass-panel">
               <Clock size={48} className="empty-icon" />
               <p>No quiz attempts yet. Go practice some questions!</p>

@@ -55,7 +55,7 @@ const Bookmarks = () => {
     navigate(`/quiz?bookmarks=true`);
   };
 
-  if (loading) return <div className="loading">Loading bookmarks...</div>;
+
 
   return (
     <div className="bookmarks-container">
@@ -100,7 +100,7 @@ const Bookmarks = () => {
       )}
 
       <div className="bookmarks-list">
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && !loading ? (
           <div className="empty-state glass-panel">
             <Bookmark size={48} className="empty-icon" />
             <p>{bookmarks.length === 0

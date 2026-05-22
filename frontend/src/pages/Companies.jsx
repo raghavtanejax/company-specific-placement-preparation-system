@@ -37,7 +37,7 @@ const Companies = () => {
     return matchesSearch && matchesDifficulty;
   });
 
-  if (loading) return <div className="loading">Loading companies...</div>;
+
 
   return (
     <div className="companies-container">
@@ -127,7 +127,7 @@ const Companies = () => {
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {filtered.length === 0 && !loading && (
         <div className="empty-state glass-panel">
           <Building2 size={48} className="empty-icon" />
           <p>No companies match your search. Try adjusting your filters.</p>

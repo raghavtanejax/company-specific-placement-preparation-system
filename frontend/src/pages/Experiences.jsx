@@ -83,9 +83,7 @@ const Experiences = () => {
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading">Loading experiences...</div>
-      ) : experiences.length === 0 ? (
+      {experiences.length === 0 && !loading ? (
         <div className="empty-state glass-panel">
           <MessageSquare size={48} className="empty-icon" />
           <p>No experiences found. Be the first to share your interview experience!</p>

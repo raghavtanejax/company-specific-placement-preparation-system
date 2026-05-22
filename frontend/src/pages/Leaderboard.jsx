@@ -24,7 +24,7 @@ const Leaderboard = () => {
     fetchLeaderboard();
   }, []);
 
-  if (loading) return <div className="loading">Loading leaderboard...</div>;
+
 
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
@@ -138,12 +138,12 @@ const Leaderboard = () => {
             </tbody>
           </table>
         </motion.div>
-      ) : (
+      ) : !loading ? (
         <div className="leaderboard-empty glass-panel">
           <div className="empty-icon">🏆</div>
           <p>No one on the leaderboard yet. Be the first to take a quiz!</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
