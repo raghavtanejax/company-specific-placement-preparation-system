@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import dns from 'dns';
+import http from 'http';
+import { Server } from 'socket.io';
 import apiRoutes from './routes/api.js';
 
 dotenv.config();
@@ -11,6 +13,13 @@ dotenv.config();
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -25,6 +34,41 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error', error: err.message });
 });
 
+// Socket.io WebRTC and Collaboration events
+io.on('connection', (socket) => {
+  console.log('User connected via Socket.io:', socket.id);
+
+  socket.on('join-room', (roomId, userId) => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+    socket.to(roomId).emit('user-joined', { socketId: socket.id, userId });
+  });
+
+  socket.on('offer', (payload) => {
+    io.to(payload.target).emit('offer', payload);
+  });
+
+  socket.on('answer', (payload) => {
+    io.to(payload.target).emit('answer', payload);
+  });
+
+  socket.on('ice-candidate', (incoming) => {
+    io.to(incoming.target).emit('ice-candidate', incoming);
+  });
+
+  socket.on('code-change', (data) => {
+    socket.to(data.roomId).emit('code-change', data.code);
+  });
+
+  socket.on('whiteboard-change', (data) => {
+    socket.to(data.roomId).emit('whiteboard-change', data.elements);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
 // Database connection - wait for connection before starting server
 const startServer = async () => {
   try {
@@ -35,7 +79,7 @@ const startServer = async () => {
     console.log('Connected to MongoDB');
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (err) {

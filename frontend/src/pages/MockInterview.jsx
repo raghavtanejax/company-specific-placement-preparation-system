@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
-import { Send, StopCircle, Mic, ArrowLeft } from 'lucide-react';
+import { Send, StopCircle, Mic, MicOff, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Excalidraw } from '@excalidraw/excalidraw';
 import './MockInterview.css';
 
 const INTERVIEW_TYPES = [
@@ -28,7 +29,63 @@ const MockInterview = () => {
   const [overallFeedback, setOverallFeedback] = useState(null);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  
+  // Voice features
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const recognitionRef = useRef(null);
   const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize SpeechRecognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputText(prev => (prev ? prev + ' ' : '') + transcript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error('Microphone access denied or error starting recognition', e);
+      }
+    }
+  };
+
+  const speakText = (text) => {
+    if (voiceEnabled && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      // Remove emojis and bold tags before speaking
+      const cleanText = text.replace(/[*_~`]/g, '').replace(/[\u{1F600}-\u{1F6FF}]/gu, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   useEffect(() => {
     fetchHistory();
@@ -58,6 +115,7 @@ const MockInterview = () => {
       setMessages([{ role: 'ai', content: data.message }]);
       setQuestionsAsked(1);
       setPhase('chat');
+      if (voiceEnabled) speakText(data.message);
     } catch (error) {
       console.error('Failed to start interview', error);
     } finally {
@@ -85,6 +143,7 @@ const MockInterview = () => {
         return [...updated, aiMsg];
       });
       setQuestionsAsked(data.questionsAsked || questionsAsked);
+      if (voiceEnabled) speakText(data.message);
 
       if (data.status === 'completed') {
         setOverallFeedback(data.overallFeedback);
@@ -127,6 +186,8 @@ const MockInterview = () => {
     setOverallFeedback(null);
     setQuestionsAsked(0);
     setInputText('');
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (isListening) toggleListening();
   };
 
   const loadPastInterview = async (id) => {
@@ -250,14 +311,26 @@ const MockInterview = () => {
             <span className="type-badge">{interviewType}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button className="btn btn-secondary icon-btn" onClick={() => {
+              setVoiceEnabled(!voiceEnabled);
+              if (voiceEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+            }} title={voiceEnabled ? 'Mute AI Voice' : 'Enable AI Voice'}>
+              {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
             <span className="question-counter">Q{questionsAsked}/5</span>
             {phase === 'chat' && <button className="end-btn" onClick={handleEnd} disabled={sending}><StopCircle size={14} /> End</button>}
           </div>
         </div>
 
         {phase === 'chat' ? (
-          <>
-            <div className="chat-messages">
+          <div className={`chat-layout ${interviewType === 'system-design' ? 'with-whiteboard' : ''}`}>
+            {interviewType === 'system-design' && (
+              <div className="whiteboard-container" style={{ height: '500px', flex: 1, minWidth: '400px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                <Excalidraw theme="dark" />
+              </div>
+            )}
+            <div className="chat-content-panel" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div className="chat-messages" style={{ flex: 1, overflowY: 'auto' }}>
               {messages.map((msg, idx) => (
                 <motion.div key={idx} className={`chat-bubble ${msg.role}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                   <div className="bubble-label">{msg.role === 'ai' ? '🤖 Interviewer' : '👤 You'}</div>
@@ -300,13 +373,23 @@ const MockInterview = () => {
               <div ref={chatEndRef} />
             </div>
 
-            <div className="chat-input-area">
-              <textarea className="chat-textarea" placeholder="Type your answer... (Shift+Enter for new line)" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} rows={2} disabled={sending} />
+            <div className="chat-input-area" style={{ display: 'flex', gap: '0.5rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <button 
+                className={`btn icon-btn ${isListening ? 'btn-danger pulse' : 'btn-secondary'}`}
+                onClick={toggleListening}
+                disabled={sending || !recognitionRef.current}
+                title="Hold to Speak"
+                style={{ padding: '0 1rem' }}
+              >
+                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+              <textarea className="chat-textarea" placeholder="Type your answer... (Shift+Enter for new line)" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} rows={2} disabled={sending} style={{ flex: 1 }} />
               <button className="btn btn-primary send-btn" onClick={handleSend} disabled={!inputText.trim() || sending}>
                 <Send size={18} />
               </button>
             </div>
-          </>
+            </div>
+          </div>
         ) : (
           <div className="review-content">
             {overallFeedback && (

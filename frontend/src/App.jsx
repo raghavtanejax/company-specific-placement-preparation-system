@@ -15,6 +15,7 @@ import ExperienceDetail from './pages/ExperienceDetail';
 import NewExperience from './pages/NewExperience';
 import Leaderboard from './pages/Leaderboard';
 import MockInterview from './pages/MockInterview';
+import PeerInterview from './pages/PeerInterview';
 import Discussions from './pages/Discussions';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -138,6 +139,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <MockInterview />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/peer-interview" 
+              element={
+                <PrivateRoute>
+                  <PeerInterview />
                 </PrivateRoute>
               } 
             />
