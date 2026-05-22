@@ -18,7 +18,9 @@ const io = new Server(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
-  }
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // In-memory room state for syncing late joiners
