@@ -135,4 +135,5 @@
   flex: 1;
   border-radius: 12px;
   overflow: hidden;
+  position: relative;
 }
