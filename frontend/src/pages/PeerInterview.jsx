@@ -5,7 +5,7 @@ import { Excalidraw } from '@excalidraw/excalidraw';
 import { Video, VideoOff, Mic, MicOff, PhoneOff, Code, PenTool, Users } from 'lucide-react';
 import './PeerInterview.css';
 
-const SOCKET_URL = import.meta.env.MODE === 'production' ? '/' : 'http://localhost:5001';
+const SOCKET_URL = import.meta.env.MODE === 'production' ? 'https://company-specific-placement-preparation.onrender.com' : 'http://localhost:5001';
 
 const PeerInterview = () => {
   const [roomId, setRoomId] = useState('');

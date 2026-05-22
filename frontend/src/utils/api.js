@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.MODE === 'production' ? '/_/backend/api' : 'http://localhost:5001/api', // Maps to Vercel's routePrefix in production
+  baseURL: import.meta.env.MODE === 'production' ? 'https://company-specific-placement-preparation.onrender.com/api' : 'http://localhost:5001/api', // Maps to live Render backend in production
 });
 
 api.interceptors.request.use(
