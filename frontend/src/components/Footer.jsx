@@ -8,7 +8,7 @@ const Footer = () => {
           
           {/* Left Side: Made By */}
           <div className="text-gray-600 font-medium text-sm sm:text-base flex items-center gap-1.5 transition-all duration-300 hover:scale-105 origin-left">
-            <span>Made with <span className="text-red-500 animate-pulse inline-block">❤️</span> by</span>
+            <span>Made by</span>
             <a 
               href="https://raghavtaneja.in" 
               target="_blank" 
