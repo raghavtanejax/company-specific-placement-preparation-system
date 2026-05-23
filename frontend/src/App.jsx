@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Dashboard from './pages/Dashboard';
 import JDAnalysis from './pages/JDAnalysis';
 import Quiz from './pages/Quiz';
@@ -40,9 +41,9 @@ const AdminRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <div className="app-container">
+      <div className="app-container flex flex-col min-h-screen">
         <Navbar />
-        <main className="main-content">
+        <main className="main-content flex-grow">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -169,6 +170,7 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   );
