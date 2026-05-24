@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import SEO from '../components/SEO';
 import './Auth.css';
 
 const Register = () => {
@@ -29,6 +30,11 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+      <SEO
+        title="Create Your Free PrepAI Account"
+        description="Sign up for PrepAI and start preparing for placement interviews at Google, Microsoft, Amazon, and 100+ companies. 2,300+ curated questions await you."
+        canonical="/register"
+      />
       <div className="auth-card glass-panel">
         <h2 className="text-gradient">Create Account</h2>
         <p className="auth-subtitle">Join us to accelerate your placement preparation.</p>

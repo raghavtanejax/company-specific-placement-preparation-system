@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ThumbsUp, Building2, Calendar, Award } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const resultConfig = {
   selected: { color: '#34d399', bg: 'rgba(16, 185, 129, 0.15)', label: '✅ Selected' },
@@ -53,8 +54,19 @@ const ExperienceDetail = () => {
 
   const rc = resultConfig[experience.result] || resultConfig.pending;
 
+  /* Build experience-specific SEO metadata */
+  const seoTitle = `${experience.company} ${experience.role} Interview Experience – ${rc.label.replace(/^\S+ /, '')}`;
+  const seoDesc = `Read a real ${experience.company} ${experience.role} interview experience on PrepAI. ${experience.rounds?.length || 0} rounds described with questions asked and insider tips. Difficulty: ${experience.difficulty}.`;
+
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', paddingBottom: '2rem' }}>
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        canonical={`/experiences/${id}`}
+        ogType="article"
+        ogImageAlt={`${experience.company} interview experience on PrepAI`}
+      />
       <button className="back-btn" onClick={() => navigate('/experiences')}>
         <ArrowLeft size={18} /> Back to Experiences
       </button>

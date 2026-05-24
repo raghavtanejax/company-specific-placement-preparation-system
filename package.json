@@ -1,0 +1,16 @@
+{
+  "name": "prepai-root",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Root package for PrepAI monorepo. Provides convenience scripts that run across frontend and backend.",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend":  "cd backend && npm run dev",
+    "build":        "cd frontend && npm run build",
+
+    "generate-sitemap": "node scripts/generate-sitemap.mjs",
+
+    "sitemap:and:build": "node scripts/generate-sitemap.mjs && cd frontend && npm run build"
+  }
+}

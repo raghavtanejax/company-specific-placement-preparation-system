@@ -1,0 +1,47 @@
+# =============================================================================
+#  PrepAI – robots.txt
+#  Tells search engine crawlers which paths they may / may not index.
+#  Place this file at: frontend/public/robots.txt
+#  It will be served from the root at: https://prepai.in/robots.txt
+# =============================================================================
+
+# ── Allow all well-behaved crawlers ──────────────────────────────────────────
+User-agent: *
+
+# ── Public pages: ALLOW ──────────────────────────────────────────────────────
+# (The Allow directives below are listed for clarity; they are the default.)
+Allow: /
+Allow: /login
+Allow: /register
+
+# ── Private / Auth-gated routes: DISALLOW ────────────────────────────────────
+# Prevents dashboards & profile pages from being indexed.
+# These routes require a JWT token, so crawlers would only see the login
+# redirect anyway, but being explicit protects against misconfiguration.
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /admin
+Disallow: /history
+Disallow: /bookmarks
+Disallow: /quiz
+Disallow: /analyze
+Disallow: /mock-interview
+Disallow: /peer-interview
+Disallow: /discussions
+Disallow: /leaderboard
+
+# ── Backend API / execution endpoints: DISALLOW ──────────────────────────────
+# /api/* is on a different origin but listed here defensively.
+Disallow: /api/
+# Block the Piston code-execution endpoint path
+Disallow: /api/execute
+
+# ── Static assets: no need to index ──────────────────────────────────────────
+Disallow: /assets/
+Disallow: /*.chunk.js$
+Disallow: /*.map$
+
+# =============================================================================
+#  Sitemap pointer — helps Google discover all public URLs automatically.
+# =============================================================================
+Sitemap: https://prepai.in/sitemap.xml

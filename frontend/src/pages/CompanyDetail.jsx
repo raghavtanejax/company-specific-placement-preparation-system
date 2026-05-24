@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Play, BookOpen, Target, Clock, ArrowRight } from 'lucide-react';
+import SEO from '../components/SEO';
 import './CompanyDetail.css';
 
 const difficultyConfig = {
@@ -36,8 +37,51 @@ const CompanyDetail = () => {
 
   const dc = difficultyConfig[company.difficulty] || difficultyConfig.medium;
 
+  /*
+   * Build optimised SEO strings from live company data.
+   * These are rendered at runtime (CSR), so they rely on the JS engine
+   * to execute before meta tags are visible. For true bot-indexable SSR,
+   * see the Next.js generateMetadata() blueprint in the migration guide.
+   */
+  const seoTitle = `${company.name} Interview Questions & Hiring Process`;
+  const seoDesc = `Prepare for ${company.name} placements with ${company.questionCount || 0}+ curated questions (${company.questionsByDifficulty?.easy || 0} easy, ${company.questionsByDifficulty?.medium || 0} medium, ${company.questionsByDifficulty?.hard || 0} hard). Study the ${company.difficulty}-level hiring roadmap, focus areas, and CTC details on PrepAI.`;
+
+  /* JSON-LD structured data — helps Google display rich results */
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'EducationalOrganization',
+    name: company.name,
+    description: company.description,
+    url: `https://prepai.in/companies/${company.slug}`,
+    educationalCredentialAwarded: company.hiringPattern?.avgCTC || '',
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: `${company.name} Interview Question Bank`,
+      numberOfItems: company.questionCount || 0,
+    },
+  };
+
   return (
     <div className="company-detail-container">
+      {/*
+        Stage 1: Dynamic company-level SEO
+        ───────────────────────────────────
+        <SEO /> renders a <Helmet> block that overrides the site-level
+        defaults defined in App.jsx for this route only.
+      */}
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        canonical={`/companies/${company.slug}`}
+        ogType="website"
+        ogImageAlt={`${company.name} interview preparation on PrepAI`}
+      >
+        {/* Inject JSON-LD as a raw <script> tag inside the <Helmet> slot */}
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      </SEO>
+
       <button className="back-btn" onClick={() => navigate('/companies')}>
         <ArrowLeft size={18} /> Back to Companies
       </button>

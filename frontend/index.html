@@ -4,7 +4,52 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>PrepAI - Company Placement Preparation</title>
+
+    <!--
+      Stage 1 SEO: Static baseline metadata
+      ───────────────────────────────────────
+      These tags live in the raw HTML file, so they are present in the
+      document *before* React hydrates. This means:
+        • Social crawlers (Slack, WhatsApp, iMessage) that don't execute JS
+          will still see a valid OG image and title.
+        • Google's initial crawl of the app shell gets a meaningful description.
+
+      react-helmet-async will OVERRIDE these tags on a per-route basis once
+      React mounts. The values below are intentional fallbacks only.
+    -->
+
+    <!-- Primary SEO -->
+    <title>PrepAI – Company-Specific Placement Preparation</title>
+    <meta name="description" content="PrepAI is your AI-powered, company-specific placement preparation platform. Practice 2,300+ curated interview questions, get Gemini AI-powered JD analysis, and read real community interview experiences." />
+    <meta name="keywords" content="placement preparation, interview questions, company specific questions, Gemini AI JD analysis, PrepAI, coding interview, DSA questions" />
+    <meta name="author" content="PrepAI" />
+    <meta name="theme-color" content="#8B5CF6" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph (Facebook, LinkedIn, WhatsApp, Slack) -->
+    <meta property="og:site_name"   content="PrepAI" />
+    <meta property="og:type"        content="website" />
+    <meta property="og:title"       content="PrepAI – Company-Specific Placement Preparation" />
+    <meta property="og:description" content="PrepAI is your AI-powered placement preparation platform. 2,300+ company-specific questions, Gemini AI JD analysis, and real interview experiences." />
+    <meta property="og:image"       content="https://prepai.in/og-default.png" />
+    <meta property="og:image:width"  content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt"   content="PrepAI – Crack Any Placement Interview" />
+    <meta property="og:url"         content="https://prepai.in/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:site"        content="@prepai_in" />
+    <meta name="twitter:title"       content="PrepAI – Company-Specific Placement Preparation" />
+    <meta name="twitter:description" content="AI-powered placement preparation with 2,300+ curated questions. Crack Google, Microsoft, Amazon & 100+ company interviews." />
+    <meta name="twitter:image"       content="https://prepai.in/og-default.png" />
+
+    <!-- Preconnect to reduce latency for critical origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Canonical for the app shell root -->
+    <link rel="canonical" href="https://prepai.in/" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import SEO from '../components/SEO';
 import './Auth.css';
 
 const Login = () => {
@@ -28,6 +29,11 @@ const Login = () => {
 
   return (
     <div className="auth-container">
+      <SEO
+        title="Login to PrepAI"
+        description="Sign in to PrepAI to continue your placement preparation journey. Access 2,300+ company-specific interview questions and AI-powered tools."
+        canonical="/login"
+      />
       <div className="auth-card glass-panel">
         <h2 className="text-gradient">Welcome Back</h2>
         <p className="auth-subtitle">Login to continue your preparation journey.</p>

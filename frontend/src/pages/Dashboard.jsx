@@ -4,6 +4,7 @@ import api from '../utils/api';
 import { Target, Activity, CheckCircle, TrendingUp, Trophy, Clock, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import SEO from '../components/SEO';
 import './Dashboard.css';
 
 const StatCard = ({ title, value, icon, index }) => (
@@ -63,6 +64,14 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+      {/*
+        noIndex=true prevents Google from indexing the personalised
+        dashboard — it's behind auth and has no SEO value.
+      */}
+      <SEO
+        title={`My Dashboard${name ? ` – ${name}` : ''}`}
+        noIndex
+      />
       <header className="dashboard-header">
         <h1 className="text-gradient">Welcome back{name ? `, ${name}` : ''}!</h1>
         <p>Track your placement preparation journey.</p>
