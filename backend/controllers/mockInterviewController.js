@@ -237,10 +237,20 @@ Write your conversational response first, then add the JSON block.`;
       }
     }
 
-    // Update the last user message with feedback if available
+    // Update the last user message with normalized feedback if available
+    let normalizedFeedback = null;
     if (feedbackForAnswer) {
       const lastUserMsg = interview.messages[interview.messages.length - 1];
-      lastUserMsg.feedback = feedbackForAnswer;
+      normalizedFeedback = {
+        score:         feedbackForAnswer.score         ?? 0,
+        isCorrect:     feedbackForAnswer.isCorrect     ?? null,
+        correctAnswer: feedbackForAnswer.isCorrect === false
+                         ? (feedbackForAnswer.correctAnswer ?? '')
+                         : undefined,
+        strengths:     Array.isArray(feedbackForAnswer.strengths)    ? feedbackForAnswer.strengths    : [],
+        improvements:  Array.isArray(feedbackForAnswer.improvements) ? feedbackForAnswer.improvements : [],
+      };
+      lastUserMsg.feedback = normalizedFeedback;
     }
 
     // Add AI response
@@ -251,7 +261,7 @@ Write your conversational response first, then add the JSON block.`;
     res.json({
       interviewId: interview._id,
       message: aiResponse,
-      feedback: feedbackForAnswer,
+      feedback: normalizedFeedback,
       status: interview.status,
       questionsAsked: interview.questionsAsked,
       overallFeedback: interview.status === 'completed' ? interview.overallFeedback : null,

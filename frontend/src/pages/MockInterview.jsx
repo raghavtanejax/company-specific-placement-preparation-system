@@ -4,6 +4,10 @@ import { Send, StopCircle, Mic, MicOff, ArrowLeft, Volume2, VolumeX } from 'luci
 import { motion } from 'framer-motion';
 import { Excalidraw } from '@excalidraw/excalidraw';
 import './MockInterview.css';
+import useVoiceInput from '../hooks/useVoiceInput';
+import useVoiceOutput from '../hooks/useVoiceOutput';
+import LiveScorePanel from '../components/LiveScorePanel';
+import InterviewReport from '../components/InterviewReport';
 
 const INTERVIEW_TYPES = [
   { id: 'technical', icon: '💻', name: 'Technical', desc: 'DSA, Coding, CS Concepts' },
@@ -30,62 +34,32 @@ const MockInterview = () => {
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   
-  // Voice features
-  const [isListening, setIsListening] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const recognitionRef = useRef(null);
+  // New State for LiveScore and Report
+  const [scores, setScores] = useState([]);
+  const [isPending, setIsPending] = useState(false);
+  const [report, setReport] = useState(null);
   const chatEndRef = useRef(null);
 
-  useEffect(() => {
-    // Initialize SpeechRecognition
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+  const {
+    isListening,
+    isSupported: isVoiceInputSupported,
+    error: voiceInputError,
+    interimTranscript,
+    startListening,
+    stopListening,
+    toggleListening,
+    isPermanentlyDisabled
+  } = useVoiceInput({
+    onFinalTranscript: (transcript) => setInputText(prev => (prev.trimEnd() ? prev.trimEnd() + ' ' : '') + transcript)
+  });
 
-      recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setInputText(prev => (prev ? prev + ' ' : '') + transcript);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-
-    return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      try {
-        recognitionRef.current?.start();
-        setIsListening(true);
-      } catch (e) {
-        console.error('Microphone access denied or error starting recognition', e);
-      }
-    }
-  };
-
-  const speakText = (text) => {
-    if (voiceEnabled && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      // Remove emojis and bold tags before speaking
-      const cleanText = text.replace(/[*_~`]/g, '').replace(/[\u{1F600}-\u{1F6FF}]/gu, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'en-US';
-      window.speechSynthesis.speak(utterance);
-    }
-  };
+  const {
+    voiceEnabled,
+    setVoiceEnabled,
+    isSupported: isVoiceOutputSupported,
+    speak: speakText,
+    cancel: cancelSpeech
+  } = useVoiceOutput();
 
   useEffect(() => {
     fetchHistory();
@@ -109,6 +83,7 @@ const MockInterview = () => {
   const handleStart = async () => {
     if (!company || !role || !interviewType) return;
     setSending(true);
+    setScores([]);
     try {
       const { data } = await api.post('/mock-interview/start', { company, role, interviewType, difficulty, aiModel });
       setInterviewId(data.interviewId);
@@ -129,9 +104,11 @@ const MockInterview = () => {
     setInputText('');
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setSending(true);
+    setIsPending(true);
 
     try {
       const { data } = await api.post('/mock-interview/respond', { interviewId, response: userMsg });
+      setIsPending(false);
       const aiMsg = { role: 'ai', content: data.message };
       setMessages(prev => {
         const updated = [...prev];
@@ -139,14 +116,19 @@ const MockInterview = () => {
         if (data.feedback) {
           const lastUserIdx = updated.length - 1;
           updated[lastUserIdx] = { ...updated[lastUserIdx], feedback: data.feedback };
+          setScores(s => [...s, { score: data.feedback.score, isCorrect: data.feedback.isCorrect }]);
         }
         return [...updated, aiMsg];
       });
       setQuestionsAsked(data.questionsAsked || questionsAsked);
-      if (voiceEnabled) speakText(data.message);
+      speakText(data.message);
 
       if (data.status === 'completed') {
         setOverallFeedback(data.overallFeedback);
+        try {
+          const reportRes = await api.get(`/mock-interview/${interviewId}/report`);
+          setReport(reportRes.data.report);
+        } catch (e) { console.error('Failed to load report', e); }
         setPhase('review');
         fetchHistory();
       }
@@ -163,6 +145,10 @@ const MockInterview = () => {
     try {
       const { data } = await api.post(`/mock-interview/${interviewId}/end`);
       setOverallFeedback(data.overallFeedback);
+      try {
+        const reportRes = await api.get(`/mock-interview/${interviewId}/report`);
+        setReport(reportRes.data.report);
+      } catch (e) { console.error('Failed to load report', e); }
       setPhase('review');
       fetchHistory();
     } catch (error) {
@@ -184,10 +170,12 @@ const MockInterview = () => {
     setMessages([]);
     setInterviewId(null);
     setOverallFeedback(null);
+    setReport(null);
+    setScores([]);
     setQuestionsAsked(0);
     setInputText('');
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    if (isListening) toggleListening();
+    cancelSpeech();
+    if (isListening) stopListening();
   };
 
   const loadPastInterview = async (id) => {
@@ -201,6 +189,10 @@ const MockInterview = () => {
       setQuestionsAsked(data.questionsAsked);
       if (data.status === 'completed') {
         setOverallFeedback(data.overallFeedback);
+        try {
+          const reportRes = await api.get(`/mock-interview/${id}/report`);
+          setReport(reportRes.data.report);
+        } catch (e) { console.error('Failed to load report', e); }
         setPhase('review');
       } else {
         setPhase('chat');
@@ -311,25 +303,19 @@ const MockInterview = () => {
             <span className="type-badge">{interviewType}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button className="btn btn-secondary icon-btn" onClick={() => {
-              setVoiceEnabled(!voiceEnabled);
-              if (voiceEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
-            }} title={voiceEnabled ? 'Mute AI Voice' : 'Enable AI Voice'}>
-              {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
             <span className="question-counter">Q{questionsAsked}/5</span>
             {phase === 'chat' && <button className="end-btn" onClick={handleEnd} disabled={sending}><StopCircle size={14} /> End</button>}
           </div>
         </div>
 
         {phase === 'chat' ? (
-          <div className={`chat-layout ${interviewType === 'system-design' ? 'with-whiteboard' : ''}`}>
+          <div className={`chat-layout flex flex-col md:flex-row gap-4 ${interviewType === 'system-design' ? 'with-whiteboard' : ''}`}>
             {interviewType === 'system-design' && (
               <div className="whiteboard-container" style={{ height: '500px', flex: 1, minWidth: '400px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
                 <Excalidraw theme="dark" />
               </div>
             )}
-            <div className="chat-content-panel" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <div className="chat-content-panel" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
               <div className="chat-messages" style={{ flex: 1, overflowY: 'auto' }}>
               {messages.map((msg, idx) => (
                 <motion.div key={idx} className={`chat-bubble ${msg.role}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
@@ -373,26 +359,45 @@ const MockInterview = () => {
               <div ref={chatEndRef} />
             </div>
 
-            <div className="chat-input-area" style={{ display: 'flex', gap: '0.5rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <button 
-                className={`btn icon-btn ${isListening ? 'btn-danger pulse' : 'btn-secondary'}`}
-                onClick={toggleListening}
-                disabled={sending || !recognitionRef.current}
-                title="Hold to Speak"
-                style={{ padding: '0 1rem' }}
-              >
-                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-              </button>
-              <textarea className="chat-textarea" placeholder="Type your answer... (Shift+Enter for new line)" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} rows={2} disabled={sending} style={{ flex: 1 }} />
-              <button className="btn btn-primary send-btn" onClick={handleSend} disabled={!inputText.trim() || sending}>
-                <Send size={18} />
-              </button>
+            <div className="chat-input-area" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {isVoiceOutputSupported && (
+                  <button 
+                    className={`btn icon-btn ${!voiceEnabled ? 'btn-danger' : 'btn-secondary'}`}
+                    onClick={() => setVoiceEnabled(!voiceEnabled)}
+                    title={voiceEnabled ? 'Mute AI Voice' : 'Enable AI Voice'}
+                    style={{ padding: '0 1rem' }}
+                  >
+                    {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                  </button>
+                )}
+                {isVoiceInputSupported && (
+                  <button 
+                    className={`btn icon-btn ${isListening ? 'btn-danger pulse' : 'btn-secondary'}`}
+                    onClick={toggleListening}
+                    disabled={sending || isPermanentlyDisabled}
+                    title="Hold to Speak"
+                    style={{ padding: '0 1rem' }}
+                  >
+                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                  </button>
+                )}
+                <textarea className="chat-textarea" placeholder="Type your answer... (Shift+Enter for new line)" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} rows={2} disabled={sending} style={{ flex: 1 }} />
+                <button className="btn btn-primary send-btn" onClick={handleSend} disabled={!inputText.trim() || sending}>
+                  <Send size={18} />
+                </button>
+              </div>
+              {interimTranscript && <div className="text-sm text-gray-400 italic">{interimTranscript}</div>}
+              {voiceInputError && <div className="text-sm text-red-500">{voiceInputError}</div>}
             </div>
             </div>
+            <LiveScorePanel scores={scores} totalQuestions={5} isPending={isPending} />
           </div>
         ) : (
           <div className="review-content">
-            {overallFeedback && (
+            {report ? (
+              <InterviewReport report={report} onStartNew={resetInterview} />
+            ) : overallFeedback ? (
               <div className="overall-feedback-card">
                 <h3>📊 Interview Summary</h3>
                 <div className="feedback-score-large">{overallFeedback.totalScore}/100</div>
@@ -415,6 +420,11 @@ const MockInterview = () => {
                 <button className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }} onClick={resetInterview}>
                   Start New Interview
                 </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 text-gray-400">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-4"></div>
+                <p>Generating detailed report...</p>
               </div>
             )}
           </div>

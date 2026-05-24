@@ -11,15 +11,39 @@ const messageSchema = new mongoose.Schema({
     required: true,
   },
   feedback: {
-    score: { type: Number, min: 0, max: 10 },
-    strengths: [String],
-    improvements: [String],
+    score:         { type: Number, min: 0, max: 10 },
+    isCorrect:     { type: Boolean },
+    correctAnswer: { type: String },   // only populated when isCorrect === false
+    strengths:     [String],
+    improvements:  [String],
   },
   timestamp: {
     type: Date,
     default: Date.now,
   },
 });
+
+const weakAreaSchema = new mongoose.Schema({
+  topic:           { type: String, required: true },
+  averageScore:    { type: Number, min: 0, max: 10 },
+  recommendations: [String],  // 1–3 items
+}, { _id: false });
+
+const topicPerformanceSchema = new mongoose.Schema({
+  topic:         { type: String, required: true },
+  averageScore:  { type: Number, min: 0, max: 10 },
+  questionCount: { type: Number },
+}, { _id: false });
+
+const perQuestionSchema = new mongoose.Schema({
+  questionText:  { type: String },
+  answerText:    { type: String },
+  score:         { type: Number, min: 0, max: 10 },
+  isCorrect:     { type: Boolean },
+  correctAnswer: { type: String },   // only when isCorrect === false
+  strengths:     [String],           // 1–3 items
+  improvements:  [String],           // 1–3 items
+}, { _id: false });
 
 const mockInterviewSchema = new mongoose.Schema({
   userId: {
@@ -69,6 +93,15 @@ const mockInterviewSchema = new mongoose.Schema({
   },
   completedAt: {
     type: Date,
+  },
+  report: {
+    totalScore:          { type: Number, min: 0, max: 100 },
+    recommendation:      { type: String },
+    summary:             { type: String },
+    perQuestionBreakdown:[perQuestionSchema],
+    topicPerformance:    [topicPerformanceSchema],
+    weakAreas:           [weakAreaSchema],
+    generatedAt:         { type: Date },
   },
 });
 

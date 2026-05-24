@@ -8,6 +8,7 @@ import { saveQuizAttempt, getQuizHistory, getAnalytics } from '../controllers/hi
 import { createExperience, getAllExperiences, getExperienceById, toggleUpvote } from '../controllers/experienceController.js';
 import { getLeaderboard, getTopPerformers } from '../controllers/leaderboardController.js';
 import { startInterview, respondToInterview, endInterview, getInterviewHistory, getInterviewById } from '../controllers/mockInterviewController.js';
+import { getInterviewReport } from '../controllers/reportController.js';
 import { createDiscussion, getDiscussionsByQuestion, getAllDiscussions, addReply, toggleDiscussionUpvote, toggleReplyUpvote } from '../controllers/discussionController.js';
 import { 
   getDashboardStats, 
@@ -77,6 +78,7 @@ router.post('/mock-interview/start', auth, startInterview);
 router.post('/mock-interview/respond', auth, respondToInterview);
 router.post('/mock-interview/:interviewId/end', auth, endInterview);
 router.get('/mock-interview/history', auth, getInterviewHistory);
+router.get('/mock-interview/:id/report', auth, getInterviewReport);
 router.get('/mock-interview/:id', auth, getInterviewById);
 
 // Discussion Forum routes
