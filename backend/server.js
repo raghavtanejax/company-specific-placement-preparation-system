@@ -9,8 +9,7 @@ import apiRoutes from './routes/api.js';
 
 dotenv.config();
 
-// Use Google's public DNS to resolve MongoDB Atlas SRV records
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 
 const app = express();
 const server = http.createServer(app);

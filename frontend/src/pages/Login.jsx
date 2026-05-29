@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import SEO from '../components/SEO';
@@ -10,6 +10,11 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Pre-warm backend server (prevents cold start delays)
+    api.get('/health').catch(() => {});
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();

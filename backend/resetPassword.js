@@ -6,8 +6,7 @@ import User from './models/User.js';
 
 dotenv.config();
 
-// Use Google's public DNS to resolve MongoDB Atlas SRV records
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 
 const resetPassword = async () => {
   try {
@@ -17,7 +16,7 @@ const resetPassword = async () => {
     const email = 'testing@gmail.com';
     const newPassword = 'password123'; // Temporary password
 
-    const user = await User.findOne({ email: new RegExp(`^${email}$`, 'i') });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
     
     if (!user) {
       console.log(`User ${email} not found!`);

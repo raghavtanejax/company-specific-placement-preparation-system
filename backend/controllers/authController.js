@@ -13,7 +13,7 @@ export const register = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     // Check if user exists
-    const existingUser = await User.findOne({ email: new RegExp(`^${normalizedEmail}$`, 'i') });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -52,7 +52,7 @@ export const login = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     // Check if user exists
-    const user = await User.findOne({ email: new RegExp(`^${normalizedEmail}$`, 'i') });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }

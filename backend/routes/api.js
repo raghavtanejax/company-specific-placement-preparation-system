@@ -16,10 +16,43 @@ import {
   getAllCompaniesAdmin, deleteCompany, 
   getAllQuestionsAdmin, deleteQuestion 
 } from '../controllers/adminController.js';
+import {
+  getPublicQuestions,
+  getPublicQuestionById,
+  getQuestionSlugs,
+  getPublicCompanies,
+  getPublicCompanyBySlug,
+  getPublicExperiences,
+  getPublicExperienceById,
+  getExperienceIds,
+} from '../controllers/publicController.js';
 import { auth } from '../middleware/auth.js';
 import { adminAuth } from '../middleware/adminAuth.js';
 
 const router = express.Router();
+
+// Health check endpoint for pre-warming backend/DB
+router.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC ROUTES (no auth) — consumed by Next.js SSR / sitemap generator
+// These are READ-ONLY and never expose user-sensitive data.
+// Rate-limit these in production with express-rate-limit if needed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Questions — public
+router.get('/public/questions/slugs',  getQuestionSlugs);      // lightweight: just IDs + titles
+router.get('/public/questions/:id',    getPublicQuestionById);  // single question by ObjectId
+router.get('/public/questions',        getPublicQuestions);     // paginated list
+
+// Companies — public
+router.get('/public/companies/:slug',  getPublicCompanyBySlug); // single company by slug
+router.get('/public/companies',        getPublicCompanies);     // all companies
+
+// Experiences — public
+router.get('/public/experiences/ids',  getExperienceIds);           // lightweight: just IDs
+router.get('/public/experiences/:id',  getPublicExperienceById);    // single experience
+router.get('/public/experiences',      getPublicExperiences);        // paginated list
 
 // Admin routes
 router.get('/admin/dashboard', auth, adminAuth, getDashboardStats);
