@@ -136,7 +136,7 @@ export const getBookmarks = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { name, email, oldPassword, newPassword } = req.body;
+    const { name, email, oldPassword, newPassword, targetJobLocation } = req.body;
     
     const user = await User.findById(req.userId);
     if (!user) {
@@ -146,6 +146,11 @@ export const updateProfile = async (req, res) => {
     // Name update
     if (name) {
       user.name = name.trim();
+    }
+
+    // Target Job Location update
+    if (targetJobLocation !== undefined) {
+      user.targetJobLocation = targetJobLocation.trim();
     }
 
     // Email update
@@ -190,7 +195,8 @@ export const updateProfile = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        targetJobLocation: user.targetJobLocation
       }
     });
   } catch (error) {

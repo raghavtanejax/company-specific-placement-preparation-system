@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Shield, Trash2, Trophy, Activity, CheckCircle, Save, Loader2, AlertTriangle, ChevronRight } from 'lucide-react';
+import { User, Mail, Lock, Shield, Trash2, Trophy, Activity, CheckCircle, Save, Loader2, AlertTriangle, ChevronRight, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import SEO from '../components/SEO';
@@ -15,6 +15,7 @@ const Settings = () => {
   // Form states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [targetJobLocation, setTargetJobLocation] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,9 +36,14 @@ const Settings = () => {
     const fetchUserData = async () => {
       try {
         const { data } = await api.get('/user/dashboard');
-        setProfile({ name: data.name, email: data.email });
+        setProfile({ 
+          name: data.name, 
+          email: data.email, 
+          targetJobLocation: data.targetJobLocation || '' 
+        });
         setName(data.name);
         setEmail(data.email);
+        setTargetJobLocation(data.targetJobLocation || '');
         setPerformance(data.performance);
       } catch (err) {
         console.error('Failed to load user settings data', err);
@@ -53,8 +59,12 @@ const Settings = () => {
     setProfileSaving(true);
     setProfileMessage({ type: '', text: '' });
     try {
-      const { data } = await api.put('/user/profile', { name, email });
-      setProfile({ name: data.user.name, email: data.user.email });
+      const { data } = await api.put('/user/profile', { name, email, targetJobLocation });
+      setProfile({ 
+        name: data.user.name, 
+        email: data.user.email, 
+        targetJobLocation: data.user.targetJobLocation || '' 
+      });
       localStorage.setItem('user', JSON.stringify(data.user));
       
       // Dispatch custom event to sync with Navbar immediately
@@ -218,6 +228,20 @@ const Settings = () => {
                         onChange={(e) => setEmail(e.target.value)} 
                         required 
                         placeholder="yourname@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Target Job Location (Self-Reported)</label>
+                    <div className="input-with-icon">
+                      <MapPin size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={targetJobLocation} 
+                        onChange={(e) => setTargetJobLocation(e.target.value)} 
+                        placeholder="e.g. London, Remote, New Delhi"
                       />
                     </div>
                   </div>

@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  targetJobLocation: {
+    type: String,
+    default: '',
+  },
   performance: {
     totalQuizzesTaken: { type: Number, default: 0 },
     totalScore: { type: Number, default: 0 },
