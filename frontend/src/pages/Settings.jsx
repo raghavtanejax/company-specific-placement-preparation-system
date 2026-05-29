@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Shield, Trash2, Trophy, Activity, CheckCircle, Save, Loader2, AlertTriangle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { User, Mail, Lock, Shield, Trash2, Trophy, Activity, CheckCircle, Save, Loader2, AlertTriangle, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import SEO from '../components/SEO';
 import './Settings.css';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [performance, setPerformance] = useState(null);
   
@@ -59,7 +60,7 @@ const Settings = () => {
       // Dispatch custom event to sync with Navbar immediately
       window.dispatchEvent(new Event('user-profile-updated'));
       
-      setProfileMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setProfileMessage({ type: 'success', text: 'Profile details updated successfully!' });
     } catch (err) {
       setProfileMessage({ 
         type: 'error', 
@@ -102,7 +103,6 @@ const Settings = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       navigate('/login');
-      // Force reload to clean any socket/in-memory states
       window.location.reload();
     } catch (err) {
       setDeleteError(err.response?.data?.message || 'Failed to delete account');
@@ -119,258 +119,344 @@ const Settings = () => {
     );
   }
 
+  const tabs = [
+    { id: 'profile', label: 'Personal Information', icon: <User size={18} /> },
+    { id: 'security', label: 'Security & Password', icon: <Shield size={18} /> },
+    { id: 'stats', label: 'Preparation Stats', icon: <Trophy size={18} /> },
+    { id: 'danger', label: 'Danger Zone', icon: <AlertTriangle size={18} />, danger: true }
+  ];
+
   return (
     <div className="settings-container">
       <SEO title="Account Settings" noIndex />
       
       <header className="settings-header">
+        <div className="settings-header-badge">Control Console</div>
         <h1 className="text-gradient">Account Settings</h1>
-        <p>Manage your profile, update password, and view platform statistics.</p>
+        <p>Manage your profile, secure your credentials, and review platform stats.</p>
       </header>
 
-      <div className="settings-grid">
-        {/* Profile Card */}
-        <motion.div 
-          className="settings-card glass-panel"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="card-header">
-            <User size={20} color="var(--neon-purple)" />
-            <h2>Personal Information</h2>
-          </div>
-          
-          <form onSubmit={handleUpdateProfile}>
-            {profileMessage.text && (
-              <div className={`form-message ${profileMessage.type}-message`}>
-                {profileMessage.text}
-              </div>
-            )}
-            
-            <div className="form-group">
-              <label className="form-label">Full Name</label>
-              <div className="input-with-icon">
-                <User size={16} className="input-icon" />
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  required 
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Email Address</label>
-              <div className="input-with-icon">
-                <Mail size={16} className="input-icon" />
-                <input 
-                  type="email" 
-                  className="form-input" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  required 
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary" disabled={profileSaving}>
-              {profileSaving ? (
-                <>
-                  <Loader2 className="animate-spin mr-2" size={16} />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} className="mr-2" />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </form>
-        </motion.div>
-
-        {/* Security Card */}
-        <motion.div 
-          className="settings-card glass-panel"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="card-header">
-            <Shield size={20} color="var(--neon-pink)" />
-            <h2>Security & Password</h2>
-          </div>
-
-          <form onSubmit={handleChangePassword}>
-            {passwordMessage.text && (
-              <div className={`form-message ${passwordMessage.type}-message`}>
-                {passwordMessage.text}
-              </div>
-            )}
-
-            <div className="form-group">
-              <label className="form-label">Current Password</label>
-              <div className="input-with-icon">
-                <Lock size={16} className="input-icon" />
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  value={oldPassword} 
-                  onChange={(e) => setOldPassword(e.target.value)} 
-                  required={!!newPassword}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">New Password</label>
-              <div className="input-with-icon">
-                <Lock size={16} className="input-icon" />
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  minLength="6"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Confirm New Password</label>
-              <div className="input-with-icon">
-                <Lock size={16} className="input-icon" />
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                  minLength="6"
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-secondary" disabled={passwordSaving}>
-              {passwordSaving ? (
-                <>
-                  <Loader2 className="animate-spin mr-2" size={16} />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Shield size={16} className="mr-2" />
-                  Update Password
-                </>
-              )}
-            </button>
-          </form>
-        </motion.div>
-
-        {/* Stats Card */}
-        <motion.div 
-          className="settings-card glass-panel stats-panel-card"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="card-header">
-            <Trophy size={20} color="var(--neon-blue)" />
-            <h2>Preparation Progress</h2>
-          </div>
-
-          {performance ? (
-            <div className="settings-stats-list">
-              <div className="settings-stat-row">
-                <div className="stat-label-with-icon">
-                  <Trophy size={16} color="var(--neon-purple)" />
-                  <span>Total XP Earned</span>
-                </div>
-                <span className="stat-value">{performance.xp || 0} XP</span>
-              </div>
-
-              <div className="settings-stat-row">
-                <div className="stat-label-with-icon">
-                  <Activity size={16} color="var(--neon-pink)" />
-                  <span>Current Active Streak</span>
-                </div>
-                <span className="stat-value">{performance.currentStreak || 0} Days 🔥</span>
-              </div>
-
-              <div className="settings-stat-row">
-                <div className="stat-label-with-icon">
-                  <CheckCircle size={16} color="#10B981" />
-                  <span>Quizzes Completed</span>
-                </div>
-                <span className="stat-value">{performance.totalQuizzesTaken || 0}</span>
-              </div>
-
-              <div className="settings-stat-row">
-                <div className="stat-label-with-icon">
-                  <User size={16} color="var(--text-muted)" />
-                  <span>Questions Attempted</span>
-                </div>
-                <span className="stat-value">{performance.totalQuestionsAttempted || 0}</span>
-              </div>
-            </div>
-          ) : (
-            <p className="no-stats">Take a quiz or complete interviews to start earning stats!</p>
-          )}
-        </motion.div>
-
-        {/* Danger Zone */}
-        <motion.div 
-          className="settings-card glass-panel danger-zone-card"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="card-header">
-            <AlertTriangle size={20} color="#EF4444" />
-            <h2>Danger Zone</h2>
-          </div>
-
-          <p className="danger-description">
-            Permanently delete your PrepAI account, including all your bookmarks, streaks, progress, and quiz history. This action is irreversible.
-          </p>
-
-          {deleteError && <div className="error-message mb-4">{deleteError}</div>}
-
-          {!showDeleteConfirm ? (
-            <button 
-              type="button" 
-              className="btn btn-danger" 
-              onClick={() => setShowDeleteConfirm(true)}
+      <div className="settings-layout">
+        {/* Settings Sidebar Tabs */}
+        <aside className="settings-sidebar glass-panel">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                // Clear state notifications on switch
+                setProfileMessage({ type: '', text: '' });
+                setPasswordMessage({ type: '', text: '' });
+                setShowDeleteConfirm(false);
+              }}
+              className={`tab-btn ${activeTab === tab.id ? 'active' : ''} ${tab.danger ? 'danger-tab' : ''}`}
             >
-              <Trash2 size={16} className="mr-2" />
-              Delete Account
+              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
+              {activeTab === tab.id && (
+                <motion.div 
+                  layoutId="active-tab-indicator" 
+                  className="active-tab-glow"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <ChevronRight size={14} className="tab-chevron" />
             </button>
-          ) : (
-            <div className="delete-confirmation-box">
-              <p className="confirmation-warning">Are you absolutely sure? This will delete all your records permanently.</p>
-              <div className="confirmation-buttons">
-                <button 
-                  type="button" 
-                  className="btn btn-danger" 
-                  onClick={handleDeleteAccount}
-                  disabled={deleting}
-                >
-                  {deleting ? 'Deleting...' : 'Yes, Delete My Account'}
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={deleting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
+          ))}
+        </aside>
+
+        {/* Settings Tab Panels */}
+        <main className="settings-content">
+          <AnimatePresence mode="wait">
+            {activeTab === 'profile' && (
+              <motion.div
+                key="profile"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25 }}
+                className="settings-panel glass-panel"
+              >
+                <div className="panel-header">
+                  <User size={22} color="var(--neon-purple)" />
+                  <div>
+                    <h2>Personal Information</h2>
+                    <p>Update your personal details and contact email address.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleUpdateProfile} className="panel-form">
+                  {profileMessage.text && (
+                    <div className={`form-message ${profileMessage.type}-message`}>
+                      {profileMessage.text}
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <div className="input-with-icon">
+                      <User size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
+                        required 
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <div className="input-with-icon">
+                      <Mail size={18} className="input-icon" />
+                      <input 
+                        type="email" 
+                        className="form-input" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        required 
+                        placeholder="yourname@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-actions">
+                    <button type="submit" className="btn btn-primary" disabled={profileSaving}>
+                      {profileSaving ? (
+                        <>
+                          <Loader2 className="animate-spin mr-2" size={16} />
+                          Saving changes...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={16} className="mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+
+            {activeTab === 'security' && (
+              <motion.div
+                key="security"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25 }}
+                className="settings-panel glass-panel"
+              >
+                <div className="panel-header">
+                  <Shield size={22} color="var(--neon-pink)" />
+                  <div>
+                    <h2>Security & Password</h2>
+                    <p>Update your password to keep your placement account secure.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="panel-form">
+                  {passwordMessage.text && (
+                    <div className={`form-message ${passwordMessage.type}-message`}>
+                      {passwordMessage.text}
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label className="form-label">Current Password</label>
+                    <div className="input-with-icon">
+                      <Lock size={18} className="input-icon" />
+                      <input 
+                        type="password" 
+                        className="form-input" 
+                        value={oldPassword} 
+                        onChange={(e) => setOldPassword(e.target.value)} 
+                        required={!!newPassword}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <div className="input-with-icon">
+                      <Lock size={18} className="input-icon" />
+                      <input 
+                        type="password" 
+                        className="form-input" 
+                        value={newPassword} 
+                        onChange={(e) => setNewPassword(e.target.value)} 
+                        minLength="6"
+                        placeholder="•••••••• (Min 6 chars)"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <div className="input-with-icon">
+                      <Lock size={18} className="input-icon" />
+                      <input 
+                        type="password" 
+                        className="form-input" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                        minLength="6"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-actions">
+                    <button type="submit" className="btn btn-secondary" disabled={passwordSaving}>
+                      {passwordSaving ? (
+                        <>
+                          <Loader2 className="animate-spin mr-2" size={16} />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <Shield size={16} className="mr-2" />
+                          Update Password
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+
+            {activeTab === 'stats' && (
+              <motion.div
+                key="stats"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25 }}
+                className="settings-panel glass-panel"
+              >
+                <div className="panel-header">
+                  <Trophy size={22} color="var(--neon-blue)" />
+                  <div>
+                    <h2>Preparation Progress</h2>
+                    <p>Summary of your overall performance and consistency statistics.</p>
+                  </div>
+                </div>
+
+                {performance ? (
+                  <div className="premium-stats-grid">
+                    <div className="premium-stat-card">
+                      <div className="p-stat-icon purple-glow"><Trophy size={24} /></div>
+                      <div className="p-stat-info">
+                        <h3>Total XP</h3>
+                        <span className="p-stat-val text-gradient">{performance.xp || 0} XP</span>
+                      </div>
+                    </div>
+
+                    <div className="premium-stat-card">
+                      <div className="p-stat-icon pink-glow"><Activity size={24} /></div>
+                      <div className="p-stat-info">
+                        <h3>Daily Streak</h3>
+                        <span className="p-stat-val text-gradient">{performance.currentStreak || 0} Days 🔥</span>
+                      </div>
+                    </div>
+
+                    <div className="premium-stat-card">
+                      <div className="p-stat-icon blue-glow"><CheckCircle size={24} /></div>
+                      <div className="p-stat-info">
+                        <h3>Quizzes Taken</h3>
+                        <span className="p-stat-val text-gradient">{performance.totalQuizzesTaken || 0}</span>
+                      </div>
+                    </div>
+
+                    <div className="premium-stat-card">
+                      <div className="p-stat-icon gray-glow"><User size={24} /></div>
+                      <div className="p-stat-info">
+                        <h3>Questions Met</h3>
+                        <span className="p-stat-val text-gradient">{performance.totalQuestionsAttempted || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="no-stats-container">
+                    <Trophy size={48} className="no-stats-icon" />
+                    <p>No active stats found. Complete practice quizzes to see metrics here!</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === 'danger' && (
+              <motion.div
+                key="danger"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25 }}
+                className="settings-panel glass-panel danger-panel"
+              >
+                <div className="panel-header">
+                  <AlertTriangle size={22} color="#EF4444" />
+                  <div>
+                    <h2>Danger Zone</h2>
+                    <p>Irreversible actions for deleting your account and history.</p>
+                  </div>
+                </div>
+
+                <div className="danger-panel-content">
+                  <div className="danger-warning-card">
+                    <AlertTriangle size={20} className="warning-card-icon" />
+                    <div>
+                      <h4>This action is irreversible</h4>
+                      <p>
+                        Deleting your account will immediately remove all your personal data, XP progress, 
+                        bookmarks, interview histories, and custom analytics. There is no way to restore this data.
+                      </p>
+                    </div>
+                  </div>
+
+                  {deleteError && <div className="error-message mb-4">{deleteError}</div>}
+
+                  {!showDeleteConfirm ? (
+                    <button 
+                      type="button" 
+                      className="btn btn-danger delete-initiate-btn" 
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete My Account
+                    </button>
+                  ) : (
+                    <div className="delete-confirm-box">
+                      <p>Are you 100% sure? Please type your request to proceed.</p>
+                      <div className="delete-confirm-actions">
+                        <button 
+                          type="button" 
+                          className="btn btn-danger" 
+                          onClick={handleDeleteAccount}
+                          disabled={deleting}
+                        >
+                          {deleting ? 'Deleting...' : 'Yes, Delete Permanently'}
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn btn-secondary" 
+                          onClick={() => setShowDeleteConfirm(false)}
+                          disabled={deleting}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );
