@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare, Trophy, Mic, MessagesSquare, Activity, Users, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, Code, Building2, History, Bookmark, MessageSquare, Trophy, Mic, MessagesSquare, Activity, Users, Menu, X, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Navbar.css';
 
@@ -18,12 +18,25 @@ const Navbar = () => {
 
   if (!token) return null;
 
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem('user'));
-  } catch (e) {
-    user = null;
-  }
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'));
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        setUser(JSON.parse(localStorage.getItem('user')));
+      } catch (e) {
+        setUser(null);
+      }
+    };
+    window.addEventListener('user-profile-updated', handleProfileUpdate);
+    return () => window.removeEventListener('user-profile-updated', handleProfileUpdate);
+  }, []);
 
   // All navigation links
   const allNavLinks = [
@@ -38,6 +51,7 @@ const Navbar = () => {
     { name: 'History', path: '/history', icon: <History size={18} />, priority: false },
     { name: 'Bookmarks', path: '/bookmarks', icon: <Bookmark size={18} />, priority: false },
     { name: 'Experiences', path: '/experiences', icon: <MessageSquare size={18} />, priority: false },
+    { name: 'Settings', path: '/settings', icon: <Settings size={18} />, priority: false },
   ];
 
   if (user && user.role === 'admin') {

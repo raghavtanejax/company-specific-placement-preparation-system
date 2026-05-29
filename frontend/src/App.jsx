@@ -20,6 +20,7 @@ import MockInterview from './pages/MockInterview';
 import PeerInterview from './pages/PeerInterview';
 import Discussions from './pages/Discussions';
 import AdminDashboard from './pages/AdminDashboard';
+import Settings from './pages/Settings';
 
 // ─── Auth Guards ──────────────────────────────────────────────────────────────
 
@@ -107,6 +108,7 @@ function App() {
             <Route path="/mock-interview"  element={<PrivateRoute><MockInterview /></PrivateRoute>} />
             <Route path="/peer-interview"  element={<PrivateRoute><PeerInterview /></PrivateRoute>} />
             <Route path="/discussions"     element={<PrivateRoute><Discussions /></PrivateRoute>} />
+            <Route path="/settings"        element={<PrivateRoute><Settings /></PrivateRoute>} />
 
             {/* ── Admin route ── */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

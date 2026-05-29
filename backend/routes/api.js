@@ -2,7 +2,7 @@ import express from 'express';
 import { register, login } from '../controllers/authController.js';
 import { analyzeJobDescription } from '../controllers/analysisController.js';
 import { getRecommendedQuestions, seedQuestions } from '../controllers/questionController.js';
-import { getUserDashboard, updatePerformance, toggleBookmark, getBookmarks } from '../controllers/userController.js';
+import { getUserDashboard, updatePerformance, toggleBookmark, getBookmarks, updateProfile, deleteSelf } from '../controllers/userController.js';
 import { getAllCompanies, getCompanyBySlug, getCompanyQuestions } from '../controllers/companyController.js';
 import { saveQuizAttempt, getQuizHistory, getAnalytics } from '../controllers/historyController.js';
 import { createExperience, getAllExperiences, getExperienceById, toggleUpvote } from '../controllers/experienceController.js';
@@ -81,6 +81,8 @@ router.post('/questions/seed', seedQuestions); // Utility route to seed DB
 // User Performance routes
 router.get('/user/dashboard', auth, getUserDashboard);
 router.put('/user/performance', auth, updatePerformance);
+router.put('/user/profile', auth, updateProfile);
+router.delete('/user/profile', auth, deleteSelf);
 
 // Bookmark routes
 router.post('/user/bookmarks/:questionId', auth, toggleBookmark);

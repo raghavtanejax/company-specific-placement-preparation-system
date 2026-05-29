@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import QuizAttempt from '../models/QuizAttempt.js';
+import bcrypt from 'bcryptjs';
 
 export const getUserDashboard = async (req, res) => {
   try {
@@ -129,6 +130,91 @@ export const getBookmarks = async (req, res) => {
 
     res.json(user.bookmarks);
   } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, email, oldPassword, newPassword } = req.body;
+    
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Name update
+    if (name) {
+      user.name = name.trim();
+    }
+
+    // Email update
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (normalizedEmail !== user.email) {
+        // Check if email already taken
+        const emailExists = await User.findOne({ email: normalizedEmail });
+        if (emailExists) {
+          return res.status(400).json({ message: 'Email is already taken by another account' });
+        }
+        user.email = normalizedEmail;
+      }
+    }
+
+    // Password update
+    if (newPassword) {
+      if (!oldPassword) {
+        return res.status(400).json({ message: 'Current password is required to change password' });
+      }
+
+      // Check current password
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Incorrect current password' });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+      }
+
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const deleteSelf = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Delete user's quiz attempts
+    await QuizAttempt.deleteMany({ userId: req.userId });
+
+    // Delete user
+    await User.findByIdAndDelete(req.userId);
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
